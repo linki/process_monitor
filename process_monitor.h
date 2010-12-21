@@ -1,3 +1,5 @@
+#include <stdio.h>
+
 struct stat_data
 {
     int pid; // %d
@@ -65,18 +67,22 @@ class ProcessMonitor
 {
     int __pid;
     unsigned __interval;
-    
+
 public:
-    
+
     stat_data_t __stat;
-    
+
     // constructors
     explicit ProcessMonitor(int pid);
-    
+
     // methods
+    void fetch();
+    void parse_from(FILE* stream);
     void parse(const char* stream);
-    
+
     // accessors
     int pid();
     unsigned interval();
+
+    unsigned long utime();
 };
