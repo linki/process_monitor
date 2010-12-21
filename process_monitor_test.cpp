@@ -1,125 +1,128 @@
+#include "process_monitor.h"
 #include <gtest/gtest.h>
 
-TEST(PROCESS_MONITOR, PROC_STAT)
+TEST(PROCESS_MONITOR, INITIALIZATION)
 {
-    char* stream = "1580 (codeblocks) S 1 1221 1221 0 -1 4202496 259035 642512 40 25 50570 12453 1643 1088 20 0 7 0 13232 489279488 17877 18446744073709551615 4194304 4855908 140734284851088 140734284850208 139774647153155 0 0 4096 1224 18446744073709551615 0 0 17 0 0 0 344 0 0\n";
-
-    int pid; // %d
-    char comm[20]; // %s executable name
-    char state; // %c char representing state
-    int ppid; // %d parent pid
-    int pgrp; // %d process group
-    int session; // %d session
-    int tty_nr; // %d controlling terminal
-    int tpgid; // %d foreground process
-    unsigned int flags; // %u kernel flags
-    unsigned long minflt; // %lu minor page faults
-    unsigned long cminflt; // %lu minor faults of waited-for children
-    unsigned long majflt; // %lu major page faults
-    unsigned long cmajflt; // %lu major faults of waited-for children
-
-    unsigned long utime; // %lu time spent in user mode in clock ticks (divide by sysconf(_SC_CLK_TCK)), includes guest time
-    unsigned long stime; // %lu time spent in kernel mode in clock ticks (divide by sysconf(_SC_CLK_TCK)
-
-    unsigned long cutime; // %lu time spent in user mode of waited-for children in clock ticks (divide by sysconf(_SC_CLK_TCK)), includes guest time
-    unsigned long cstime; // %lu time spent in kernel mode of waited-for children in clock ticks (divide by sysconf(_SC_CLK_TCK)
-
-    long priority; // %ld
-    long nice; // nice value %ld
-
-    long num_threads; // %ld
-
-    long itrealvalue; // %ld unused, always 0
-
-    unsigned long long starttime; // %llu The time in jiffies the process started after system boot.
-    unsigned long vsize; // %lu Virtual memory size in bytes.
-
-    long rss; // %ld Resident  Set  Size: number of pages the process has in real memory
-    unsigned long rsslim; // %lu  Current  soft  limit  in  bytes  on  the  rss of the process
-
-    unsigned long startcode; // %lu The address above which program text can run.
-    unsigned long endcode; // %lu The address below which program text can run.
-    unsigned long startstack; // %lu The  address  of  the  start  (i.e.,  bottom) of the stack.
-    unsigned long kstkesp; // %lu The current value of ESP (stack pointer), as found in the kernel stack page for the process.
-    unsigned long kstkeip; // %lu The current EIP (instruction pointer).
-
-    unsigned long signal; // %lu  The  bitmap of pending signals, Obsolete; use /proc/[pid]/status instead.
-    unsigned long blocked; // %lu The bitmap of blocked signals, Obsolete; use proc/[pid]/status instead.
-    unsigned long sigignore;// %lu The  bitmap of ignored signals, Obsolete; use /proc/[pid]/status instead.
-    unsigned long sigcatch; // %lu The bitmap of caught signals, Obsolete; use /proc/[pid]/status instead.
-
-    unsigned long wchan; // %lu This  is the "channel" in which the process is waiting
-    unsigned long nswap; // %lu Number of pages swapped (not maintained).
-    unsigned long cnswap; // %lu Cumulative nswap for child processes (not maintained).
-
-    int exit_signal; // %d Signal to be sent to parent when we die.
-    int processor; // %d CPU number last executed on.
-
-    unsigned int rt_priority; // %u Real-time scheduling priority
-    unsigned int policy; // %u Scheduling policy
-
-    unsigned long long delayacct_blkio_ticks; // %llu Aggregated block I/O delays, measured in clock ticks (centiseconds).
-    unsigned long guest_time; // %lu Guest time of the process (time spent running a virtual CPU for a guest operating system), measured in clock ticks (divide by sysconf(_SC_CLK_TCK).
-    long cguest_time; // %ld Guest time  of  the process's children, measured in clock ticks (divide by sysconf(_SC_CLK_TCK).
-
-    sscanf(stream, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %llu %lu %ld %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %d %d %u %u %llu %lu %ld", &pid, &comm, &state, &ppid, &pgrp, &session, &tty_nr,
-                                              &tpgid, &flags, &minflt, &cminflt, &majflt, &cmajflt, &utime, &stime,
-                                              &cutime, &cstime, &priority, &nice, &num_threads, &itrealvalue,
-                                              &starttime, &vsize, &rss, &rsslim, &startcode, &endcode, &startstack,
-                                              &kstkesp, &kstkeip, &signal, &blocked, &sigignore, &sigcatch, &wchan,
-                                              &nswap, &cnswap, &exit_signal, &processor, &rt_priority, &policy,
-                                              &delayacct_blkio_ticks, &guest_time, &cguest_time );
-
-    EXPECT_EQ(1580, pid);
-    EXPECT_STREQ("(codeblocks)", comm);
-    EXPECT_EQ('S', state);
-    EXPECT_EQ(1, ppid);
-    EXPECT_EQ(1221, pgrp);
-    EXPECT_EQ(1221, session);
-    EXPECT_EQ(0, tty_nr);
-    EXPECT_EQ(-1, tpgid);
-    EXPECT_EQ(4202496, flags);
-    EXPECT_EQ(259035, minflt);
-    EXPECT_EQ(642512, cminflt);
-    EXPECT_EQ(40, majflt);
-    EXPECT_EQ(25, cmajflt);
-    EXPECT_EQ(50570, utime);
-    EXPECT_EQ(12453, stime);
-    EXPECT_EQ(1643, cutime);
-    EXPECT_EQ(1088, cstime);
-    EXPECT_EQ(20, priority);
-    EXPECT_EQ(0, nice);
-    EXPECT_EQ(7, num_threads);
-    EXPECT_EQ(0, itrealvalue);
-    EXPECT_EQ(13232, starttime);
-    EXPECT_EQ(489279488, vsize);
-    EXPECT_EQ(17877, rss);
-    EXPECT_EQ(18446744073709551615, rsslim);
-    EXPECT_EQ(4194304, startcode);
-    EXPECT_EQ(4855908, endcode);
-    EXPECT_EQ(140734284851088, startstack);
-    EXPECT_EQ(140734284850208, kstkesp);
-    EXPECT_EQ(139774647153155, kstkeip);
-    EXPECT_EQ(0, signal);
-    EXPECT_EQ(0, blocked);
-    EXPECT_EQ(4096, sigignore);
-    EXPECT_EQ(1224, sigcatch);
-    EXPECT_EQ(18446744073709551615, wchan);
-    EXPECT_EQ(0, nswap);
-    EXPECT_EQ(0, cnswap);
-    EXPECT_EQ(17, exit_signal);
-    EXPECT_EQ(0, processor);
-    EXPECT_EQ(0, rt_priority);
-    EXPECT_EQ(0, policy);
-    EXPECT_EQ(344, delayacct_blkio_ticks);
-    EXPECT_EQ(0, guest_time);
-    EXPECT_EQ(0, cguest_time);
+    // takes pid as argument
+    ProcessMonitor* pm = new ProcessMonitor(123);
+    EXPECT_EQ(123, pm->pid());
+    
+    // defaults to interval of 1000 ms
+    EXPECT_EQ(1000, pm->interval());
 }
 
+TEST(PROCESS_MONITOR, PARSE_PROCESS_STAT)
+{
+    ProcessMonitor* pm = new ProcessMonitor(123);
+
+    const char* proc_stat = "1580 (codeblocks) S 1 1221 1221 0 -1 4202496 259035 642512 40 25 50570 12453 1643 1088 20 0 7 0 13232 489279488 17877 18446744073709551615 4194304 4855908 140734284851088 140734284850208 139774647153155 0 0 4096 1224 18446744073709551615 0 0 17 0 0 0 344 0 0\n";
+    pm->parse(proc_stat);
+    
+    EXPECT_EQ(1580, pm->__stat.pid);
+    EXPECT_STREQ("(codeblocks)", pm->__stat.comm);
+    EXPECT_EQ('S', pm->__stat.state);
+    EXPECT_EQ(1, pm->__stat.ppid);
+    EXPECT_EQ(1221, pm->__stat.pgrp);
+    EXPECT_EQ(1221, pm->__stat.session);
+    EXPECT_EQ(0, pm->__stat.tty_nr);
+    EXPECT_EQ(-1, pm->__stat.tpgid);
+    EXPECT_EQ(4202496, pm->__stat.flags);
+    EXPECT_EQ(259035, pm->__stat.minflt);
+    EXPECT_EQ(642512, pm->__stat.cminflt);
+    EXPECT_EQ(40, pm->__stat.majflt);
+    EXPECT_EQ(25, pm->__stat.cmajflt);
+    EXPECT_EQ(50570, pm->__stat.utime);
+    EXPECT_EQ(12453, pm->__stat.stime);
+    EXPECT_EQ(1643, pm->__stat.cutime);
+    EXPECT_EQ(1088, pm->__stat.cstime);
+    EXPECT_EQ(20, pm->__stat.priority);
+    EXPECT_EQ(0, pm->__stat.nice);
+    EXPECT_EQ(7, pm->__stat.num_threads);
+    EXPECT_EQ(0, pm->__stat.itrealvalue);
+    EXPECT_EQ(13232, pm->__stat.starttime);
+    EXPECT_EQ(489279488, pm->__stat.vsize);
+    EXPECT_EQ(17877, pm->__stat.rss);
+    EXPECT_EQ(18446744073709551615ul, pm->__stat.rsslim);
+    EXPECT_EQ(4194304, pm->__stat.startcode);
+    EXPECT_EQ(4855908, pm->__stat.endcode);
+    EXPECT_EQ(140734284851088, pm->__stat.startstack);
+    EXPECT_EQ(140734284850208, pm->__stat.kstkesp);
+    EXPECT_EQ(139774647153155, pm->__stat.kstkeip);
+    EXPECT_EQ(0, pm->__stat.signal);
+    EXPECT_EQ(0, pm->__stat.blocked);
+    EXPECT_EQ(4096, pm->__stat.sigignore);
+    EXPECT_EQ(1224, pm->__stat.sigcatch);
+    EXPECT_EQ(18446744073709551615ul, pm->__stat.wchan);
+    EXPECT_EQ(0, pm->__stat.nswap);
+    EXPECT_EQ(0, pm->__stat.cnswap);
+    EXPECT_EQ(17, pm->__stat.exit_signal);
+    EXPECT_EQ(0, pm->__stat.processor);
+    EXPECT_EQ(0, pm->__stat.rt_priority);
+    EXPECT_EQ(0, pm->__stat.policy);
+    EXPECT_EQ(344, pm->__stat.delayacct_blkio_ticks);
+    EXPECT_EQ(0, pm->__stat.guest_time);
+    EXPECT_EQ(0, pm->__stat.cguest_time);
+}
+
+TEST(PROCESS_MONITOR, PARSE_PROCESS_THREAD_STAT)
+{
+    ProcessMonitor* pm = new ProcessMonitor(123);
+
+    const char* proc_stat = "1580 (codeblocks) S 1 1221 1221 0 -1 4202496 259035 642512 40 25 50570 12453 1643 1088 20 0 7 0 13232 489279488 17877 18446744073709551615 4194304 4855908 140734284851088 140734284850208 139774647153155 0 0 4096 1224 18446744073709551615 0 0 17 0 0 0 344 0 0\n";
+    pm->parse(proc_stat);
+
+    const char* thread_stat = "4344 (codeblocks) S 1 1221 1221 0 -1 4202560 52 24868 0 0 0 0 3 6 20 0 6 0 2147156 359444480 11028 18446744073709551615 4194304 4855908 140736585266400 140701987634104 140702160767644 0 0 4096 1224 18446744071579437197 0 0 -1 0 0 0 0 0 0\n";    
+    pm->parse(thread_stat);
+
+    EXPECT_EQ(4344, pm->__stat.pid);
+    EXPECT_STREQ("(codeblocks)", pm->__stat.comm);
+    EXPECT_EQ('S', pm->__stat.state);
+    EXPECT_EQ(1, pm->__stat.ppid);
+    EXPECT_EQ(1221, pm->__stat.pgrp);
+    EXPECT_EQ(1221, pm->__stat.session);
+    EXPECT_EQ(0, pm->__stat.tty_nr);
+    EXPECT_EQ(-1, pm->__stat.tpgid);
+    EXPECT_EQ(4202560, pm->__stat.flags);
+    EXPECT_EQ(52, pm->__stat.minflt);
+    EXPECT_EQ(24868, pm->__stat.cminflt);
+    EXPECT_EQ(0, pm->__stat.majflt);
+    EXPECT_EQ(0, pm->__stat.cmajflt);
+    EXPECT_EQ(0, pm->__stat.utime);
+    EXPECT_EQ(0, pm->__stat.stime);
+    EXPECT_EQ(3, pm->__stat.cutime);
+    EXPECT_EQ(6, pm->__stat.cstime);
+    EXPECT_EQ(20, pm->__stat.priority);
+    EXPECT_EQ(0, pm->__stat.nice);
+    EXPECT_EQ(6, pm->__stat.num_threads);
+    EXPECT_EQ(0, pm->__stat.itrealvalue);
+    EXPECT_EQ(2147156, pm->__stat.starttime);
+    EXPECT_EQ(359444480, pm->__stat.vsize);
+    EXPECT_EQ(11028, pm->__stat.rss);
+    EXPECT_EQ(18446744073709551615ul, pm->__stat.rsslim);
+    EXPECT_EQ(4194304, pm->__stat.startcode);
+    EXPECT_EQ(4855908, pm->__stat.endcode);
+    EXPECT_EQ(140736585266400, pm->__stat.startstack);
+    EXPECT_EQ(140701987634104, pm->__stat.kstkesp);
+    EXPECT_EQ(140702160767644, pm->__stat.kstkeip);
+    EXPECT_EQ(0, pm->__stat.signal);
+    EXPECT_EQ(0, pm->__stat.blocked);
+    EXPECT_EQ(4096, pm->__stat.sigignore);
+    EXPECT_EQ(1224, pm->__stat.sigcatch);
+    EXPECT_EQ(18446744071579437197ul, pm->__stat.wchan);
+    EXPECT_EQ(0, pm->__stat.nswap);
+    EXPECT_EQ(0, pm->__stat.cnswap);
+    EXPECT_EQ(-1, pm->__stat.exit_signal);
+    EXPECT_EQ(0, pm->__stat.processor);
+    EXPECT_EQ(0, pm->__stat.rt_priority);
+    EXPECT_EQ(0, pm->__stat.policy);
+    EXPECT_EQ(0, pm->__stat.delayacct_blkio_ticks);
+    EXPECT_EQ(0, pm->__stat.guest_time);
+    EXPECT_EQ(0, pm->__stat.cguest_time);
+}
 
 TEST(PROCESS_MONITOR, PROC_STATM)
 {
-    char* stream = "119626 18050 6660 162 0 43782 0\n";
+    const char* stream = "119626 18050 6660 162 0 43782 0\n";
 
     unsigned long long size; // total program size
     unsigned long long resident; // resident set size
@@ -142,7 +145,7 @@ TEST(PROCESS_MONITOR, PROC_STATM)
 
 TEST(PROCESS_MONITOR, LOADAVG)
 {
-    char* stream = "1.35 1.53 1.46 1/272 3848\n";
+    const char* stream = "1.35 1.53 1.46 1/272 3848\n";
 
     long double loadavg1;
     long double loadavg5;
@@ -151,7 +154,7 @@ TEST(PROCESS_MONITOR, LOADAVG)
     unsigned long total;
     int last;
 
-    sscanf(stream, "%Lg %Lg %Lg %lu/%lu %d", &loadavg1, &loadavg5, &loadavg15, &current, &total, &last);
+    sscanf(stream, "%Lf %Lf %Lf %lu/%lu %d", &loadavg1, &loadavg5, &loadavg15, &current, &total, &last);
 
     EXPECT_EQ(135, (unsigned long long) (loadavg1 * 100));
     EXPECT_EQ(153, (unsigned long long) (loadavg5 * 100));
@@ -159,4 +162,50 @@ TEST(PROCESS_MONITOR, LOADAVG)
     EXPECT_EQ(1, current);
     EXPECT_EQ(272, total);
     EXPECT_EQ(3848, last);
+}
+
+TEST(PROCESS_MONITOR, STAT)
+{
+    const char* stream = "cpu  14842 0 10925 30063097 10957 4 116 0 0 \
+    cpu0 2383 0 1887 2500083 3497 3 32 0 0                            \
+    cpu1 1696 0 2722 2503456 439 0 16 0 0                             \
+    cpu2 1928 0 1651 2504827 203 0 17 0 0                             \
+    cpu3 749 0 386 2506769 183 0 6 0 0                                \
+    cpu4 600 0 466 2507359 119 0 2 0 0                                \
+    cpu5 872 0 1007 2507295 94 0 6 0 0                                \
+    cpu6 300 0 396 2507559 18 0 10 0 0                                \
+    cpu7 1560 0 833 2506283 68 0 4 0 0                                \
+    cpu8 523 0 239 2507004 120 0 3 0 0                                \
+    cpu9 3612 0 868 2497644 6113 0 4 0 0                              \
+    cpu10 367 0 150 2507315 46 0 2 0 0                                \
+    cpu11 246 0 315 2507498 51 0 9 0 0                                \
+    intr 4884079 233 2 0 2 2 0 0 0 10 0 0 0 4 0 0 0 0 0 1 0 0 0 0 35 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 55059 686 14 258 132 59704 16097 14756 15182 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 \
+    ctxt 6367595                                                      \
+    btime 1292865263                                                  \
+    processes 11175                                                   \
+    procs_running 1                                                   \
+    procs_blocked 0                                                   \
+    softirq 5246143 0 2374008 6101 171399 36176 8 404816 4925 2248710\n";
+
+    unsigned long utime; // user mode
+    unsigned long nice; // user mode with low priority
+    unsigned long stime; // kernel mode
+    unsigned long idle; // idle task
+    unsigned long iowait; // time waiting for I/O to complete
+    unsigned long irq; // time  servicing  interrupts
+    unsigned long softirq; // time servicing softirqs
+    unsigned long steal; // time spent in other operating systems when running in a virtualized environment
+    unsigned long guest; // time spent running a virtual CPU for guest operating systems under the control of the Linux kernel
+
+    sscanf(stream, "cpu %lu %lu %lu %lu %lu %lu %lu %lu %lu", &utime, &nice, &stime, &idle, &iowait, &irq, &softirq, &steal, &guest);
+
+    EXPECT_EQ(14842, utime);
+    EXPECT_EQ(0, nice);
+    EXPECT_EQ(10925, stime);
+    EXPECT_EQ(30063097, idle);
+    EXPECT_EQ(10957, iowait);
+    EXPECT_EQ(4, irq);
+    EXPECT_EQ(116, softirq);
+    EXPECT_EQ(0, steal);
+    EXPECT_EQ(0, guest);
 }

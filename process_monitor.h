@@ -1,11 +1,7 @@
-#include <stdio.h>
-#include <stdlib.h>
-
-int main()
+struct stat_data
 {
-    FILE *stream;
     int pid; // %d
-    char comm[20]; // %s executable name
+    char* comm; // %s executable name
     char state; // %c char representing state
     int ppid; // %d parent pid
     int pgrp; // %d process group
@@ -61,57 +57,26 @@ int main()
     unsigned long long delayacct_blkio_ticks; // %llu Aggregated block I/O delays, measured in clock ticks (centiseconds).
     unsigned long guest_time; // %lu Guest time of the process (time spent running a virtual CPU for a guest operating system), measured in clock ticks (divide by sysconf(_SC_CLK_TCK).
     long cguest_time; // %ld Guest time  of  the process's children, measured in clock ticks (divide by sysconf(_SC_CLK_TCK).
+};
 
-    stream = fopen("/proc/1580/stat", "r");
+typedef struct stat_data stat_data_t;
 
-    /* Put in various data. */
-    fscanf(stream, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %llu %lu %ld %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %d %d %u %u %llu %lu %ld", &pid, &comm, &state, &ppid, &pgrp, &session, &tty_nr,
-                                              &tpgid, &flags, &minflt, &cminflt, &majflt, &cmajflt, &utime, &stime,
-                                              &cutime, &cstime, &priority, &nice, &num_threads, &itrealvalue,
-                                              &starttime, &vsize, &rss, &rsslim, &startcode, &endcode, &startstack,
-                                              &kstkesp, &kstkeip, &signal, &blocked, &sigignore, &sigcatch, &wchan,
-                                              &nswap, &cnswap, &exit_signal, &processor, &rt_priority, &policy,
-                                              &delayacct_blkio_ticks, &guest_time, &cguest_time );
-
-    printf("%d.%s.%c.%d.%d.%d.%d.%d.%u.%lu.%lu.%lu.%lu.%lu.%lu.%lu.%lu.%ld.%ld.%ld.%ld.%llu.%lu.%ld.%lu.%lu.%lu.%lu.%lu.%lu.%lu.%lu.%lu.%lu.%lu.%lu.%lu.%d.%d.%u.%u.%llu.%lu.%ld\n", pid, comm, state, ppid, pgrp, session, tty_nr,
-                                     tpgid, flags, minflt, cminflt, majflt, cmajflt, utime, stime,
-                                     cutime, cstime, priority, nice, num_threads, itrealvalue,
-                                     starttime, vsize, rss, rsslim, startcode, endcode, startstack,
-                                     kstkesp, kstkeip, signal, blocked, sigignore, sigcatch, wchan,
-                                     nswap, cnswap, exit_signal, processor, rt_priority, policy,
-                                     delayacct_blkio_ticks, guest_time, cguest_time);
-
-    unsigned long long size; // total program size
-    unsigned long long resident; // resident set size
-    unsigned long long share; // shared pages (from shared mappings)
-    unsigned long long text; // text (code)
-    unsigned long long lib; // library (unused in Linux 2.6)
-    unsigned long long data; // data + stack
-    unsigned long long dt; // dirty pages (unused in Linux 2.6)
-
-    stream = fopen("/proc/1580/statm", "r");
-
-    /* Put in various data. */
-    fscanf(stream, "%llu %llu %llu %llu %llu %llu %llu", &size, &resident, &share, &text, &lib, &data, &dt);
-
-    printf("%llu.%llu.%llu.%llu.%llu.%llu.%llu", size, resident, share, text, lib, data, dt);
-
-    // each thread has a directory in /proc/pid/task/
-
-    double loadavg_1;
-    double loadavg_5;
-    double loadavg_15;
-    unsigned long current;
-    unsigned long total;
-    int last;
-
-
-    stream = fopen("/proc/loadavg", "r");
-
-    /* Put in various data. */
-    fscanf(stream, "%e %e %e", &loadavg_1, &loadavg_5, &loadavg_15);
-
-    printf("%e.%e.%e", loadavg_1, loadavg_5, loadavg_15);
-
-    return 0;
-}
+class ProcessMonitor
+{
+    int __pid;
+    unsigned __interval;
+    
+public:
+    
+    stat_data_t __stat;
+    
+    // constructors
+    explicit ProcessMonitor(int pid);
+    
+    // methods
+    void parse(const char* stream);
+    
+    // accessors
+    int pid();
+    unsigned interval();
+};
