@@ -3,6 +3,21 @@
 
 struct stat_data
 {
+    unsigned long utime; // user mode
+    unsigned long nice; // user mode with low priority
+    unsigned long stime; // kernel mode
+    unsigned long idle; // idle task
+    unsigned long iowait; // time waiting for I/O to complete
+    unsigned long irq; // time  servicing  interrupts
+    unsigned long softirq; // time servicing softirqs
+    unsigned long steal; // time spent in other operating systems when running in a virtualized environment
+    unsigned long guest; // time spent running a virtual CPU for guest operating systems under the control of the Linux kernel
+};
+
+typedef struct stat_data stat_data_t;
+
+struct proc_stat_data
+{
     int pid; // %d
     char comm[20]; // %s executable name
     char state; // %c char representing state
@@ -62,7 +77,7 @@ struct stat_data
     long cguest_time; // %ld Guest time  of  the process's children, measured in clock ticks (divide by sysconf(_SC_CLK_TCK).
 };
 
-typedef struct stat_data stat_data_t;
+typedef struct proc_stat_data proc_stat_data_t;
 
 class ProcessMonitor
 {
@@ -72,14 +87,15 @@ class ProcessMonitor
 
 public:
 
-    stat_data_t __stat;
+    proc_stat_data_t __stat;
 
     // constructors
     explicit ProcessMonitor(int pid);
 
     // methods
     void fetch();
-    void parse_from(FILE* stream, stat_data_t* stat);
+    void parse_from(FILE* stream, proc_stat_data_t* stat);
+    void parse_stat_data(FILE* stream, stat_data_t* stat_data);
     void parse(const char* stream);
 
     static void* run(void* data);

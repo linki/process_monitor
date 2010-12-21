@@ -68,55 +68,57 @@ TEST(PROCESS_MONITOR, PARSE_PROCESS_STAT_FROM_FILE)
 {
     ProcessMonitor* pm = new ProcessMonitor(123);
 
+    proc_stat_data_t stat_data;
+
     FILE* stream;
     stream = fopen("proc_stat", "r");
-    pm->parse_from(stream, &pm->__stat);
+    pm->parse_from(stream, &stat_data);
     fclose(stream);
 
-    EXPECT_EQ(4197, pm->__stat.pid);
-    EXPECT_STREQ("(codeblocks)", pm->__stat.comm);
-    EXPECT_EQ('S', pm->__stat.state);
-    EXPECT_EQ(1, pm->__stat.ppid);
-    EXPECT_EQ(1221, pm->__stat.pgrp);
-    EXPECT_EQ(1221, pm->__stat.session);
-    EXPECT_EQ(0, pm->__stat.tty_nr);
-    EXPECT_EQ(-1, pm->__stat.tpgid);
-    EXPECT_EQ(4202496, pm->__stat.flags);
-    EXPECT_EQ(32421, pm->__stat.minflt);
-    EXPECT_EQ(25985, pm->__stat.cminflt);
-    EXPECT_EQ(0, pm->__stat.majflt);
-    EXPECT_EQ(0, pm->__stat.cmajflt);
-    EXPECT_EQ(5959, pm->__stat.utime);
-    EXPECT_EQ(1920, pm->__stat.stime);
-    EXPECT_EQ(8, pm->__stat.cutime);
-    EXPECT_EQ(7, pm->__stat.cstime);
-    EXPECT_EQ(20, pm->__stat.priority);
-    EXPECT_EQ(0, pm->__stat.nice);
-    EXPECT_EQ(7, pm->__stat.num_threads);
-    EXPECT_EQ(0, pm->__stat.itrealvalue);
-    EXPECT_EQ(2146751, pm->__stat.starttime);
-    EXPECT_EQ(476565504, pm->__stat.vsize);
-    EXPECT_EQ(16921, pm->__stat.rss);
-    EXPECT_EQ(18446744073709551615ul, pm->__stat.rsslim);
-    EXPECT_EQ(4194304, pm->__stat.startcode);
-    EXPECT_EQ(4855908, pm->__stat.endcode);
-    EXPECT_EQ(140736585266400, pm->__stat.startstack);
-    EXPECT_EQ(140736585265520, pm->__stat.kstkesp);
-    EXPECT_EQ(140702147826179, pm->__stat.kstkeip);
-    EXPECT_EQ(0, pm->__stat.signal);
-    EXPECT_EQ(0, pm->__stat.blocked);
-    EXPECT_EQ(4096, pm->__stat.sigignore);
-    EXPECT_EQ(1224, pm->__stat.sigcatch);
-    EXPECT_EQ(18446744073709551615ul, pm->__stat.wchan);
-    EXPECT_EQ(0, pm->__stat.nswap);
-    EXPECT_EQ(0, pm->__stat.cnswap);
-    EXPECT_EQ(17, pm->__stat.exit_signal);
-    EXPECT_EQ(0, pm->__stat.processor);
-    EXPECT_EQ(0, pm->__stat.rt_priority);
-    EXPECT_EQ(0, pm->__stat.policy);
-    EXPECT_EQ(4, pm->__stat.delayacct_blkio_ticks);
-    EXPECT_EQ(0, pm->__stat.guest_time);
-    EXPECT_EQ(0, pm->__stat.cguest_time);
+    EXPECT_EQ(4197, stat_data.pid);
+    EXPECT_STREQ("(codeblocks)", stat_data.comm);
+    EXPECT_EQ('S', stat_data.state);
+    EXPECT_EQ(1, stat_data.ppid);
+    EXPECT_EQ(1221, stat_data.pgrp);
+    EXPECT_EQ(1221, stat_data.session);
+    EXPECT_EQ(0, stat_data.tty_nr);
+    EXPECT_EQ(-1, stat_data.tpgid);
+    EXPECT_EQ(4202496, stat_data.flags);
+    EXPECT_EQ(32421, stat_data.minflt);
+    EXPECT_EQ(25985, stat_data.cminflt);
+    EXPECT_EQ(0, stat_data.majflt);
+    EXPECT_EQ(0, stat_data.cmajflt);
+    EXPECT_EQ(5959, stat_data.utime);
+    EXPECT_EQ(1920, stat_data.stime);
+    EXPECT_EQ(8, stat_data.cutime);
+    EXPECT_EQ(7, stat_data.cstime);
+    EXPECT_EQ(20, stat_data.priority);
+    EXPECT_EQ(0, stat_data.nice);
+    EXPECT_EQ(7, stat_data.num_threads);
+    EXPECT_EQ(0, stat_data.itrealvalue);
+    EXPECT_EQ(2146751, stat_data.starttime);
+    EXPECT_EQ(476565504, stat_data.vsize);
+    EXPECT_EQ(16921, stat_data.rss);
+    EXPECT_EQ(18446744073709551615ul, stat_data.rsslim);
+    EXPECT_EQ(4194304, stat_data.startcode);
+    EXPECT_EQ(4855908, stat_data.endcode);
+    EXPECT_EQ(140736585266400, stat_data.startstack);
+    EXPECT_EQ(140736585265520, stat_data.kstkesp);
+    EXPECT_EQ(140702147826179, stat_data.kstkeip);
+    EXPECT_EQ(0, stat_data.signal);
+    EXPECT_EQ(0, stat_data.blocked);
+    EXPECT_EQ(4096, stat_data.sigignore);
+    EXPECT_EQ(1224, stat_data.sigcatch);
+    EXPECT_EQ(18446744073709551615ul, stat_data.wchan);
+    EXPECT_EQ(0, stat_data.nswap);
+    EXPECT_EQ(0, stat_data.cnswap);
+    EXPECT_EQ(17, stat_data.exit_signal);
+    EXPECT_EQ(0, stat_data.processor);
+    EXPECT_EQ(0, stat_data.rt_priority);
+    EXPECT_EQ(0, stat_data.policy);
+    EXPECT_EQ(4, stat_data.delayacct_blkio_ticks);
+    EXPECT_EQ(0, stat_data.guest_time);
+    EXPECT_EQ(0, stat_data.cguest_time);
 }
 
 TEST(PROCESS_MONITOR, PARSE_PROCESS_THREAD_STAT)
@@ -221,46 +223,22 @@ TEST(PROCESS_MONITOR, LOADAVG)
 
 TEST(PROCESS_MONITOR, STAT)
 {
-    const char* stream = "cpu  14842 0 10925 30063097 10957 4 116 0 0 \
-    cpu0 2383 0 1887 2500083 3497 3 32 0 0                            \
-    cpu1 1696 0 2722 2503456 439 0 16 0 0                             \
-    cpu2 1928 0 1651 2504827 203 0 17 0 0                             \
-    cpu3 749 0 386 2506769 183 0 6 0 0                                \
-    cpu4 600 0 466 2507359 119 0 2 0 0                                \
-    cpu5 872 0 1007 2507295 94 0 6 0 0                                \
-    cpu6 300 0 396 2507559 18 0 10 0 0                                \
-    cpu7 1560 0 833 2506283 68 0 4 0 0                                \
-    cpu8 523 0 239 2507004 120 0 3 0 0                                \
-    cpu9 3612 0 868 2497644 6113 0 4 0 0                              \
-    cpu10 367 0 150 2507315 46 0 2 0 0                                \
-    cpu11 246 0 315 2507498 51 0 9 0 0                                \
-    intr 4884079 233 2 0 2 2 0 0 0 10 0 0 0 4 0 0 0 0 0 1 0 0 0 0 35 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 55059 686 14 258 132 59704 16097 14756 15182 1 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 \
-    ctxt 6367595                                                      \
-    btime 1292865263                                                  \
-    processes 11175                                                   \
-    procs_running 1                                                   \
-    procs_blocked 0                                                   \
-    softirq 5246143 0 2374008 6101 171399 36176 8 404816 4925 2248710\n";
+    ProcessMonitor* pm = new ProcessMonitor(123);
+    
+    stat_data_t stat_data;
+    
+    FILE* stream;
+    stream = fopen("stat", "r");
+    pm->parse_stat_data(stream, &stat_data);
+    fclose(stream);
 
-    unsigned long utime; // user mode
-    unsigned long nice; // user mode with low priority
-    unsigned long stime; // kernel mode
-    unsigned long idle; // idle task
-    unsigned long iowait; // time waiting for I/O to complete
-    unsigned long irq; // time  servicing  interrupts
-    unsigned long softirq; // time servicing softirqs
-    unsigned long steal; // time spent in other operating systems when running in a virtualized environment
-    unsigned long guest; // time spent running a virtual CPU for guest operating systems under the control of the Linux kernel
-
-    sscanf(stream, "cpu %lu %lu %lu %lu %lu %lu %lu %lu %lu", &utime, &nice, &stime, &idle, &iowait, &irq, &softirq, &steal, &guest);
-
-    EXPECT_EQ(14842, utime);
-    EXPECT_EQ(0, nice);
-    EXPECT_EQ(10925, stime);
-    EXPECT_EQ(30063097, idle);
-    EXPECT_EQ(10957, iowait);
-    EXPECT_EQ(4, irq);
-    EXPECT_EQ(116, softirq);
-    EXPECT_EQ(0, steal);
-    EXPECT_EQ(0, guest);
+    EXPECT_EQ(2904, stat_data.utime);
+    EXPECT_EQ(0, stat_data.nice);
+    EXPECT_EQ(2375, stat_data.stime);
+    EXPECT_EQ(4606257, stat_data.idle);
+    EXPECT_EQ(5670, stat_data.iowait);
+    EXPECT_EQ(3, stat_data.irq);
+    EXPECT_EQ(23, stat_data.softirq);
+    EXPECT_EQ(0, stat_data.steal);
+    EXPECT_EQ(0, stat_data.guest);
 }

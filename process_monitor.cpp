@@ -70,7 +70,7 @@ void ProcessMonitor::fetch()
     fclose(stream);
 }
 
-void ProcessMonitor::parse_from(FILE* stream, stat_data_t* stat)
+void ProcessMonitor::parse_from(FILE* stream, proc_stat_data_t* stat)
 {
     fscanf(stream, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %llu %lu %ld %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %d %d %u %u %llu %lu %ld",
         &stat->pid, stat->comm, &stat->state, &stat->ppid, &stat->pgrp, &stat->session, &stat->tty_nr,
@@ -80,6 +80,13 @@ void ProcessMonitor::parse_from(FILE* stream, stat_data_t* stat)
         &stat->kstkesp, &stat->kstkeip, &stat->signal, &stat->blocked, &stat->sigignore, &stat->sigcatch, &stat->wchan,
         &stat->nswap, &stat->cnswap, &stat->exit_signal, &stat->processor, &stat->rt_priority, &stat->policy,
         &stat->delayacct_blkio_ticks, &stat->guest_time, &stat->cguest_time);
+}
+
+void ProcessMonitor::parse_stat_data(FILE* stream, stat_data_t* stat_data)
+{
+    fscanf(stream, "cpu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
+        &stat_data->utime, &stat_data->nice, &stat_data->stime, &stat_data->idle, &stat_data->iowait,
+        &stat_data->irq, &stat_data->softirq, &stat_data->steal, &stat_data->guest);
 }
 
 void ProcessMonitor::parse(const char* stream)
