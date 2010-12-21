@@ -3,7 +3,7 @@
 struct stat_data
 {
     int pid; // %d
-    char* comm; // %s executable name
+    char comm[20]; // %s executable name
     char state; // %c char representing state
     int ppid; // %d parent pid
     int pgrp; // %d process group
