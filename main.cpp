@@ -20,9 +20,9 @@ int main (int argc, const char* argv[])
 	ProcessMonitor* pm = new ProcessMonitor(pid);
 
     pm->start();
-    
-    sleep(5);
-    
+
+    sleep(20);
+
     pm->stop();
 
     return 0;

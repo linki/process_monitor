@@ -8,7 +8,7 @@ TEST(PROCESS_MONITOR, INITIALIZATION)
     EXPECT_EQ(123, pm->pid());
 
     // defaults to interval of 1000 ms
-    EXPECT_EQ(1000, pm->interval());
+    EXPECT_EQ(1, pm->interval());
 }
 
 TEST(PROCESS_MONITOR, PARSE_PROCESS_STAT)
@@ -70,7 +70,7 @@ TEST(PROCESS_MONITOR, PARSE_PROCESS_STAT_FROM_FILE)
 
     FILE* stream;
     stream = fopen("proc_stat", "r");
-    pm->parse_from(stream);
+    pm->parse_from(stream, &pm->__stat);
     fclose(stream);
 
     EXPECT_EQ(4197, pm->__stat.pid);

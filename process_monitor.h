@@ -79,12 +79,12 @@ public:
 
     // methods
     void fetch();
-    void parse_from(FILE* stream);
+    void parse_from(FILE* stream, stat_data_t* stat);
     void parse(const char* stream);
-    
+
     static void* run(void* data);
     void start();
-    void stop();    
+    void stop();
 
     // accessors
     int pid();
