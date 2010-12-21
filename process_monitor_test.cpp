@@ -227,8 +227,7 @@ TEST(PROCESS_MONITOR, STAT)
     
     stat_data_t stat_data;
     
-    FILE* stream;
-    stream = fopen("stat", "r");
+    FILE* stream = fopen("stat", "r");
     pm->parse_stat_data(stream, &stat_data);
     fclose(stream);
 
