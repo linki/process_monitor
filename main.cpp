@@ -19,11 +19,12 @@ int main (int argc, const char* argv[])
 
 	ProcessMonitor* pm = new ProcessMonitor(pid);
 
-	pm->fetch();
-	printf("%lu\n", pm->__stat.cmajflt);
-	sleep(1);
-    pm->fetch();
-	printf("%lu\n", pm->utime());
+    while (1)
+    {
+        pm->fetch();
+        printf("%lu\n", pm->utime());
+        sleep(1);
+    }
 
     return 0;
 }
