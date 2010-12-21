@@ -70,8 +70,7 @@ TEST(PROCESS_MONITOR, PARSE_PROCESS_STAT_FROM_FILE)
 
     proc_stat_data_t stat_data;
 
-    FILE* stream;
-    stream = fopen("proc_stat", "r");
+    FILE* stream = fopen("proc_stat", "r");
     pm->parse_from(stream, &stat_data);
     fclose(stream);
 

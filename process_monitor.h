@@ -87,7 +87,11 @@ class ProcessMonitor
 
 public:
 
+    stat_data_t __system_stat;
+    stat_data_t __last_system_stat;    
+
     proc_stat_data_t __stat;
+    proc_stat_data_t __last_stat;    
 
     // constructors
     explicit ProcessMonitor(int pid);

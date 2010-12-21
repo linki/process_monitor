@@ -23,7 +23,7 @@ void* ProcessMonitor::run(void* data)
     while (1)
     {
 	    pm->fetch();
-	    printf("%lu\n", pm->utime());
+	    printf("%lu %lu %lu %lu\n", pm->__last_stat.utime, pm->__stat.utime, pm->__last_system_stat.utime, pm->__last_stat.utime);
 	    sleep(pm->interval());
     }
 
@@ -62,11 +62,20 @@ void ProcessMonitor::stop()
 
 void ProcessMonitor::fetch()
 {
-    FILE *stream;
     char filename[20]; //todo
     sprintf(filename, "/proc/%d/stat", __pid);
-    stream = fopen(filename, "r");
+    
+    __last_stat = __stat;
+
+    FILE* stream = fopen(filename, "r");
     parse_from(stream, &__stat);
+    
+    fclose(stream);    
+    stream = fopen("/proc/stat", "r");
+
+    __last_system_stat = __system_stat;
+    parse_stat_data(stream, &__system_stat);    
+
     fclose(stream);
 }
 
