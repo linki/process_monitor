@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <pthread.h>
 
 struct stat_data
 {
@@ -65,6 +66,7 @@ typedef struct stat_data stat_data_t;
 
 class ProcessMonitor
 {
+    pthread_t __runner;
     int __pid;
     unsigned __interval;
 
@@ -79,6 +81,10 @@ public:
     void fetch();
     void parse_from(FILE* stream);
     void parse(const char* stream);
+    
+    static void* run(void* data);
+    void start();
+    void stop();    
 
     // accessors
     int pid();

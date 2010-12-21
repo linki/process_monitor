@@ -1,10 +1,63 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
+#include <pthread.h>
 #include "process_monitor.h"
 
 ProcessMonitor::ProcessMonitor(int pid)
 {
 	__pid = pid;
     __interval = 1000;
+}
+
+void* ProcessMonitor::run(void* data)
+{
+	/* enable canceling of thread */
+	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
+	
+	/* enable immediate cancelation */
+	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
+
+    ProcessMonitor* pm = (ProcessMonitor*) data;
+    
+    while (1)
+    {
+	    pm->fetch();        
+	    printf("%lu\n", pm->utime());
+	    sleep(1);
+    }
+    
+	pthread_exit(NULL);
+}
+
+void ProcessMonitor::start()
+{
+	pthread_attr_t attr;
+	pthread_attr_init(&attr);
+	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);	
+	
+    int status = pthread_create(&__runner, &attr, run, this);
+	
+	if (status)
+	{
+		printf("ERROR: return code from pthread_create() is %d\n", status);
+		exit(-1);
+	}
+	
+	pthread_attr_destroy(&attr);
+}
+
+void ProcessMonitor::stop()
+{
+    pthread_cancel(__runner);
+    
+	int status = pthread_join(__runner, NULL);
+	
+	if (status)
+	{
+		printf("ERROR: return code from pthread_join() is %d\n", status);
+		exit(-1);
+	}
 }
 
 void ProcessMonitor::fetch()
