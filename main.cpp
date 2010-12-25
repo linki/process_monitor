@@ -24,7 +24,7 @@ int main (int argc, const char* argv[])
 
     for (int i = 0; i < 20; ++i)
     {
-	    printf("%lu %lu %lu %lu\n", pm->__last_stat.utime, pm->__stat.utime, pm->__last_system_stat.utime, pm->__last_stat.utime);        
+	    printf("%lu %lu %lu %lu\n", pm->__last_stat.utime, pm->__stat.utime, pm->__last_system_stat.utime, pm->__last_system_stat.utime);        
         sleep(1);
     }
 

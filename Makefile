@@ -4,7 +4,7 @@ CLIBS=-lgtop-2.0 -lgtop_sysdeps-2.0 -lgtop_common-2.0
 PKG_CONFIG=`pkg-config --libs --cflags libgtop-2.0`
 
 app:
-	g++ -o main main.cpp process_monitor.cpp $(PKG_CONFIG)
+	g++ -o main main.cpp process_monitor.cpp -lpthread $(PKG_CONFIG)
 
 test: compile
 	./process_monitor_test
