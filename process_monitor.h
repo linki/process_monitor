@@ -80,6 +80,7 @@ struct proc_stat_data
 };
 
 typedef struct proc_stat_data proc_stat_data_t;
+typedef struct proc_stat_data thread_stat_data_t;
 
 class ProcessMonitor
 {
@@ -103,10 +104,14 @@ public:
     // methods
     void fetch();
     void parse_proc_stat(int pid, proc_stat_data_t* stat);
+    void parse_thread_stat(int pid, int tid, thread_stat_data_t* stat);
     void parse_stat(stat_data_t* stat);    
     void parse_from(FILE* stream, proc_stat_data_t* stat);
     void parse_stat_data(FILE* stream, stat_data_t* stat_data);
     void parse(const char* stream);
+    
+    int threads(int pid);
+    int thread_ids(int pid, int** ptids);
 
     // control
     static void* run(void* data);

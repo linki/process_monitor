@@ -22,9 +22,17 @@ int main (int argc, const char* argv[])
 
     pm->start();
 
-    for (int i = 0; i < 20; ++i)
+    while (1)
     {
-	    printf("%lu %lu %lu %lu\n", pm->__last_stat.utime, pm->__stat.utime, pm->__last_system_stat.utime, pm->__last_system_stat.utime);        
+	    printf("p: %lu", pm->utime());
+	    
+        for (int i = 0; i < pm->threads(); ++i)
+        {
+            printf("t%d: %lu", i, pm->utime(i));
+        }
+	    
+        printf("\n");
+        
         sleep(1);
     }
 

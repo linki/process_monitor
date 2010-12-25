@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <pthread.h>
+#include <dirent.h>
 #include "process_monitor.h"
 
 ProcessMonitor::ProcessMonitor(int pid)
@@ -62,20 +63,22 @@ void ProcessMonitor::stop()
 
 void ProcessMonitor::fetch()
 {
-    char filename[16]; //todo
-    snprintf(filename, 16, "/proc/%d/stat", __pid);
+    char filename[32]; //todo
+    snprintf(filename, 32, "%s/%d/stat", __proc_path, __pid);
     
     __last_stat = __stat;
 
     FILE* stream = fopen(filename, "r");
     parse_from(stream, &__stat);
     
-    fclose(stream);    
-    stream = fopen("/proc/stat", "r");
-
+    fclose(stream);
+    
+    snprintf(filename, 32, "%s/stat", __proc_path);
+    stream = fopen(filename, "r");
+    
     __last_system_stat = __system_stat;
     parse_stat_data(stream, &__system_stat);    
-
+    
     fclose(stream);
 }
 
@@ -83,6 +86,17 @@ void ProcessMonitor::parse_proc_stat(int pid, proc_stat_data_t* stat)
 {
     char filename[32]; //todo
     snprintf(filename, 32, "%s/%d/stat", __proc_path, pid);
+
+    FILE* stream = fopen(filename, "r");
+    parse_from(stream, stat);
+    fclose(stream);
+}
+
+
+void ProcessMonitor::parse_thread_stat(int pid, int tid, thread_stat_data_t* stat)
+{
+    char filename[64]; //todo
+    snprintf(filename, 64, "%s/%d/task/%d/stat", __proc_path, pid, tid);
 
     FILE* stream = fopen(filename, "r");
     parse_from(stream, stat);
@@ -128,6 +142,40 @@ void ProcessMonitor::parse(const char* stream)
         &__stat.kstkesp, &__stat.kstkeip, &__stat.signal, &__stat.blocked, &__stat.sigignore, &__stat.sigcatch, &__stat.wchan,
         &__stat.nswap, &__stat.cnswap, &__stat.exit_signal, &__stat.processor, &__stat.rt_priority, &__stat.policy,
         &__stat.delayacct_blkio_ticks, &__stat.guest_time, &__stat.cguest_time);
+}
+
+int ProcessMonitor::threads(int pid)
+{
+    int* pids;
+    int tcnt = thread_ids(pid, &pids);
+    free(pids);
+    return tcnt;
+}
+    
+int ProcessMonitor::thread_ids(int pid, int** ptids)
+{
+    struct dirent **folders;
+    
+    char task_path[64]; //todo
+    snprintf(task_path, 64, "%s/%d/task", __proc_path, pid);
+    
+    int tcnt = scandir(task_path, &folders, NULL, NULL) - 2;
+
+    *ptids = (int*) malloc(tcnt * sizeof(int));
+        
+    for (int i = 0; i < tcnt; ++i)
+    {
+        (*ptids)[i] = atoi(folders[i+2]->d_name);
+    }
+
+    for (int i = 0; i < tcnt+2; ++i)
+    {
+        free(folders[i]);
+    }
+            
+    free(folders);
+    
+    return tcnt;
 }
 
 int ProcessMonitor::pid()
