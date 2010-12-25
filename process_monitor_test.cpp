@@ -3,76 +3,28 @@
 
 TEST(PROCESS_MONITOR, INITIALIZATION)
 {
-    // takes pid as argument
-    ProcessMonitor* pm = new ProcessMonitor(123);
-    EXPECT_EQ(123, pm->pid());
+    ProcessMonitor* pm = new ProcessMonitor(42);
 
-    // defaults to interval of 1000 ms
+    EXPECT_EQ(42, pm->pid());
     EXPECT_EQ(1, pm->interval());
+    EXPECT_STREQ("/proc", pm->proc_path());
 }
 
-TEST(PROCESS_MONITOR, PARSE_PROCESS_STAT)
+TEST(PROCESS_MONITOR, CHANGE_PROC_PATH)
 {
-    ProcessMonitor* pm = new ProcessMonitor(123);
-
-    const char* proc_stat = "1580 (codeblocks) S 1 1221 1221 0 -1 4202496 259035 642512 40 25 50570 12453 1643 1088 20 0 7 0 13232 489279488 17877 18446744073709551615 4194304 4855908 140734284851088 140734284850208 139774647153155 0 0 4096 1224 18446744073709551615 0 0 17 0 0 0 344 0 0\n";
-    pm->parse(proc_stat);
-
-    EXPECT_EQ(1580, pm->__stat.pid);
-    EXPECT_STREQ("(codeblocks)", pm->__stat.comm);
-    EXPECT_EQ('S', pm->__stat.state);
-    EXPECT_EQ(1, pm->__stat.ppid);
-    EXPECT_EQ(1221, pm->__stat.pgrp);
-    EXPECT_EQ(1221, pm->__stat.session);
-    EXPECT_EQ(0, pm->__stat.tty_nr);
-    EXPECT_EQ(-1, pm->__stat.tpgid);
-    EXPECT_EQ(4202496, pm->__stat.flags);
-    EXPECT_EQ(259035, pm->__stat.minflt);
-    EXPECT_EQ(642512, pm->__stat.cminflt);
-    EXPECT_EQ(40, pm->__stat.majflt);
-    EXPECT_EQ(25, pm->__stat.cmajflt);
-    EXPECT_EQ(50570, pm->__stat.utime);
-    EXPECT_EQ(12453, pm->__stat.stime);
-    EXPECT_EQ(1643, pm->__stat.cutime);
-    EXPECT_EQ(1088, pm->__stat.cstime);
-    EXPECT_EQ(20, pm->__stat.priority);
-    EXPECT_EQ(0, pm->__stat.nice);
-    EXPECT_EQ(7, pm->__stat.num_threads);
-    EXPECT_EQ(0, pm->__stat.itrealvalue);
-    EXPECT_EQ(13232, pm->__stat.starttime);
-    EXPECT_EQ(489279488, pm->__stat.vsize);
-    EXPECT_EQ(17877, pm->__stat.rss);
-    EXPECT_EQ(18446744073709551615ul, pm->__stat.rsslim);
-    EXPECT_EQ(4194304, pm->__stat.startcode);
-    EXPECT_EQ(4855908, pm->__stat.endcode);
-    EXPECT_EQ(140734284851088, pm->__stat.startstack);
-    EXPECT_EQ(140734284850208, pm->__stat.kstkesp);
-    EXPECT_EQ(139774647153155, pm->__stat.kstkeip);
-    EXPECT_EQ(0, pm->__stat.signal);
-    EXPECT_EQ(0, pm->__stat.blocked);
-    EXPECT_EQ(4096, pm->__stat.sigignore);
-    EXPECT_EQ(1224, pm->__stat.sigcatch);
-    EXPECT_EQ(18446744073709551615ul, pm->__stat.wchan);
-    EXPECT_EQ(0, pm->__stat.nswap);
-    EXPECT_EQ(0, pm->__stat.cnswap);
-    EXPECT_EQ(17, pm->__stat.exit_signal);
-    EXPECT_EQ(0, pm->__stat.processor);
-    EXPECT_EQ(0, pm->__stat.rt_priority);
-    EXPECT_EQ(0, pm->__stat.policy);
-    EXPECT_EQ(344, pm->__stat.delayacct_blkio_ticks);
-    EXPECT_EQ(0, pm->__stat.guest_time);
-    EXPECT_EQ(0, pm->__stat.cguest_time);
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->proc_path("/some/other/proc/path");
+    EXPECT_STREQ("/some/other/proc/path", pm->proc_path());
 }
 
 TEST(PROCESS_MONITOR, PARSE_PROCESS_STAT_FROM_FILE)
 {
-    ProcessMonitor* pm = new ProcessMonitor(123);
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->proc_path("test/proc");
 
     proc_stat_data_t stat_data;
-
-    FILE* stream = fopen("proc_stat", "r");
-    pm->parse_from(stream, &stat_data);
-    fclose(stream);
+    
+    pm->parse_proc_stat(42, &stat_data);
 
     EXPECT_EQ(4197, stat_data.pid);
     EXPECT_STREQ("(codeblocks)", stat_data.comm);
@@ -122,7 +74,7 @@ TEST(PROCESS_MONITOR, PARSE_PROCESS_STAT_FROM_FILE)
 
 TEST(PROCESS_MONITOR, PARSE_PROCESS_THREAD_STAT)
 {
-    ProcessMonitor* pm = new ProcessMonitor(123);
+    ProcessMonitor* pm = new ProcessMonitor(42);
 
     const char* proc_stat = "1580 (codeblocks) S 1 1221 1221 0 -1 4202496 259035 642512 40 25 50570 12453 1643 1088 20 0 7 0 13232 489279488 17877 18446744073709551615 4194304 4855908 140734284851088 140734284850208 139774647153155 0 0 4096 1224 18446744073709551615 0 0 17 0 0 0 344 0 0\n";
     pm->parse(proc_stat);
@@ -222,14 +174,13 @@ TEST(PROCESS_MONITOR, LOADAVG)
 
 TEST(PROCESS_MONITOR, STAT)
 {
-    ProcessMonitor* pm = new ProcessMonitor(123);
-    
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->proc_path("test/proc");
+        
     stat_data_t stat_data;
     
-    FILE* stream = fopen("stat", "r");
-    pm->parse_stat_data(stream, &stat_data);
-    fclose(stream);
-
+    pm->parse_stat(&stat_data);
+    
     EXPECT_EQ(2904, stat_data.utime);
     EXPECT_EQ(0, stat_data.nice);
     EXPECT_EQ(2375, stat_data.stime);

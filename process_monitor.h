@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <pthread.h>
 
+#define DEFAULT_PROC_PATH "/proc"
+
 struct stat_data
 {
     unsigned long utime; // user mode
@@ -82,8 +84,10 @@ typedef struct proc_stat_data proc_stat_data_t;
 class ProcessMonitor
 {
     pthread_t __runner;
+
     int __pid;
     unsigned __interval;
+    char* __proc_path;
 
 public:
 
@@ -98,10 +102,13 @@ public:
 
     // methods
     void fetch();
+    void parse_proc_stat(int pid, proc_stat_data_t* stat);
+    void parse_stat(stat_data_t* stat);    
     void parse_from(FILE* stream, proc_stat_data_t* stat);
     void parse_stat_data(FILE* stream, stat_data_t* stat_data);
     void parse(const char* stream);
 
+    // control
     static void* run(void* data);
     void start();
     void stop();
@@ -109,6 +116,8 @@ public:
     // accessors
     int pid();
     unsigned interval();
+    char* proc_path();
+    void proc_path(char* proc_path);
 
     unsigned long utime();
 };

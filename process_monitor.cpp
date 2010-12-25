@@ -8,6 +8,7 @@ ProcessMonitor::ProcessMonitor(int pid)
 {
 	__pid = pid;
     __interval = 1;
+    __proc_path = DEFAULT_PROC_PATH;
 }
 
 void* ProcessMonitor::run(void* data)
@@ -23,7 +24,6 @@ void* ProcessMonitor::run(void* data)
     while (1)
     {
 	    pm->fetch();
-	    printf("%lu %lu %lu %lu\n", pm->__last_stat.utime, pm->__stat.utime, pm->__last_system_stat.utime, pm->__last_stat.utime);
 	    sleep(pm->interval());
     }
 
@@ -62,8 +62,8 @@ void ProcessMonitor::stop()
 
 void ProcessMonitor::fetch()
 {
-    char filename[20]; //todo
-    sprintf(filename, "/proc/%d/stat", __pid);
+    char filename[16]; //todo
+    snprintf(filename, 16, "/proc/%d/stat", __pid);
     
     __last_stat = __stat;
 
@@ -76,6 +76,26 @@ void ProcessMonitor::fetch()
     __last_system_stat = __system_stat;
     parse_stat_data(stream, &__system_stat);    
 
+    fclose(stream);
+}
+
+void ProcessMonitor::parse_proc_stat(int pid, proc_stat_data_t* stat)
+{
+    char filename[32]; //todo
+    snprintf(filename, 32, "%s/%d/stat", __proc_path, pid);
+
+    FILE* stream = fopen(filename, "r");
+    parse_from(stream, stat);
+    fclose(stream);
+}
+
+void ProcessMonitor::parse_stat(stat_data_t* stat)
+{
+    char filename[32]; //todo
+    snprintf(filename, 32, "%s/stat", __proc_path);
+
+    FILE* stream = fopen(filename, "r");
+    parse_stat_data(stream, stat);
     fclose(stream);
 }
 
@@ -123,4 +143,14 @@ unsigned ProcessMonitor::interval()
 unsigned long ProcessMonitor::utime()
 {
     return __stat.utime;
+}
+
+char* ProcessMonitor::proc_path()
+{
+    return __proc_path;
+}
+
+void ProcessMonitor::proc_path(char* proc_path)
+{
+    __proc_path = proc_path; // todo strcpy
 }
