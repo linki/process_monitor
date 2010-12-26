@@ -125,6 +125,7 @@ TEST(ProcessMonitor, ParseSystemStatAllCPUS)
     system_data_t system_data;
     pm->parse_system_stat(&system_data);
 
+//    EXPECT_EQ(4611536, system_data.cpus.total);
     EXPECT_EQ(2904, system_data.cpus.utime);
     EXPECT_EQ(0, system_data.cpus.nice);
     EXPECT_EQ(2375, system_data.cpus.stime);
@@ -135,6 +136,7 @@ TEST(ProcessMonitor, ParseSystemStatAllCPUS)
     EXPECT_EQ(0, system_data.cpus.steal);
     EXPECT_EQ(0, system_data.cpus.guest);
 
+    //EXPECT_EQ(382549, system_data.cpu[0].total);
     EXPECT_EQ(435, system_data.cpu[0].utime);
     EXPECT_EQ(0, system_data.cpu[0].nice);
     EXPECT_EQ(253, system_data.cpu[0].stime);
@@ -145,6 +147,7 @@ TEST(ProcessMonitor, ParseSystemStatAllCPUS)
     EXPECT_EQ(0, system_data.cpu[0].steal);
     EXPECT_EQ(0, system_data.cpu[0].guest);
     
+    //EXPECT_EQ(384465, system_data.cpu[5].total);    
     EXPECT_EQ(100, system_data.cpu[5].utime);
     EXPECT_EQ(0, system_data.cpu[5].nice);
     EXPECT_EQ(72, system_data.cpu[5].stime);
@@ -155,6 +158,7 @@ TEST(ProcessMonitor, ParseSystemStatAllCPUS)
     EXPECT_EQ(0, system_data.cpu[5].steal);
     EXPECT_EQ(0, system_data.cpu[5].guest);
     
+    //EXPECT_EQ(384606, system_data.cpu[11].total);    
     EXPECT_EQ(25, system_data.cpu[11].utime);
     EXPECT_EQ(0, system_data.cpu[11].nice);
     EXPECT_EQ(131, system_data.cpu[11].stime);
@@ -316,4 +320,83 @@ TEST(ProcessMonitor, ParseLoadAvg)
     EXPECT_EQ(1, current);
     EXPECT_EQ(272, total);
     EXPECT_EQ(3848, last);
+}
+
+TEST(ProcessMonitor, RememberLastFetch)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
+    pm->fetch();
+
+    pm->_system_data.cpus.utime = 1;
+    pm->_process_data.utime = 5;
+    pm->fetch();
+    
+    EXPECT_EQ(1, pm->_last_system_data.cpus.utime);    
+    EXPECT_EQ(5, pm->_last_process_data.utime);
+    
+    pm->_system_data.cpus.utime = 2;    
+    pm->_process_data.utime = 6;    
+    pm->fetch();
+   
+    EXPECT_EQ(2, pm->_last_system_data.cpus.utime);     
+    EXPECT_EQ(6, pm->_last_process_data.utime);
+}
+
+TEST(ProcessMonitor, ComputeSystemCPUUsage)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
+    pm->fetch();
+
+    pm->_system_data.cpus.total = 100;
+    pm->_system_data.cpus.idle = 100;
+    
+    pm->fetch();
+
+    pm->_system_data.cpus.total = 200;
+    pm->_system_data.cpus.idle = 180;
+    
+    EXPECT_EQ(20, pm->cpu_usage());
+}
+
+TEST(ProcessMonitor, ComputeSystemCPUxUsage)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
+    pm->fetch();
+
+    pm->_system_data.cpu[0].total = 100;
+    pm->_system_data.cpu[0].idle = 100;
+
+    pm->_system_data.cpu[1].total = 300;
+    pm->_system_data.cpu[1].idle = 300;
+    
+    pm->fetch();
+
+    pm->_system_data.cpu[0].total = 200;
+    pm->_system_data.cpu[0].idle = 180;
+
+    pm->_system_data.cpu[1].total = 700;
+    pm->_system_data.cpu[1].idle = 400;
+    
+    EXPECT_EQ(20, pm->cpu_usage(0));
+    EXPECT_EQ(75, pm->cpu_usage(1));    
+}
+
+TEST(ProcessMonitor, ComputeCorrectProcessCPUUsage)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
+    pm->fetch();
+
+    pm->_system_data.cpus.utime = 0;
+    pm->_process_data.utime = 0;
+    
+    pm->fetch();
+
+    pm->_system_data.cpus.utime = 100;
+    pm->_process_data.utime = 10;
+    
+    //EXPECT_EQ(10, pm->process_cpu_usage());
 }

@@ -19,6 +19,8 @@ int main (int argc, const char* argv[])
 
 	ProcessMonitor* pm = new ProcessMonitor(pid);
     // pm->procfs_path("test/proc");
+    pm->fetch();
+    pm->fetch();    
 
     pm->start();
 
@@ -31,11 +33,11 @@ int main (int argc, const char* argv[])
         //             printf(" t%d: %lu", i, pm->utime(i));
         //         }
         
-        printf("a: %lu", pm->cpus());
+        printf("a: %d", pm->cpu_usage());
         
         for (int i = 0; i < pm->cpu_count(); ++i)
         {
-            printf(" c%d: %lu", i, pm->cpu(i));
+            printf(" c%d: %d", i, pm->cpu_usage(i));
         }
 	    
         printf("\n");

@@ -5,6 +5,7 @@
 
 struct cpu_data
 {
+    unsigned long total; // total is the sum of utime, stime and idle
     unsigned long utime; // user mode
     unsigned long nice; // user mode with low priority
     unsigned long stime; // kernel mode
@@ -42,6 +43,7 @@ struct process_data
 
     //
     
+
     int pid; // %d
     char comm[20]; // %s executable name
     char state; // %c char representing state
@@ -117,9 +119,10 @@ public:
     cpu_data_t __last_system_stat;    
     
     system_data_t _system_data;
+    system_data_t _last_system_data;
 
     process_data_t _process_data;
-    process_data_t __last_stat;    
+    process_data_t _last_process_data;
 
     // constructors
     explicit ProcessMonitor(int pid);
@@ -156,6 +159,9 @@ public:
     char* procfs_path();
     void procfs_path(const char* procfs_path);
 
+    int cpu_usage();
+    int cpu_usage(int cid);
+
     int cpu_count();
     
     unsigned long cpus();
@@ -167,4 +173,5 @@ public:
     unsigned long utime(int tid);
     
     char state();
+    
 };
