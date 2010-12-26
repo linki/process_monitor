@@ -7,41 +7,59 @@ TEST(ProcessMonitor, Initialization)
 
     EXPECT_EQ(42, pm->pid());
     EXPECT_EQ(1, pm->interval());
-    EXPECT_STREQ("/proc", pm->proc_path());
+    EXPECT_STREQ("/proc", pm->procfs_path());
 }
 
 TEST(ProcessMonitor, ChangeProcPath)
 {
     ProcessMonitor* pm = new ProcessMonitor(42);
-    pm->proc_path("/some/other/proc/path");
-    EXPECT_STREQ("/some/other/proc/path", pm->proc_path());
+    pm->procfs_path("/some/other/procfs/path");
+    EXPECT_STREQ("/some/other/procfs/path", pm->procfs_path());
 }
 
 TEST(ProcessMonitor, FetchUpdatesTheData)
 {
     ProcessMonitor* pm = new ProcessMonitor(42);
-    pm->proc_path("test/proc");
+    pm->procfs_path("test/proc");
 
-    EXPECT_EQ(0, pm->__stat.utime);
+    // EXPECT_EQ(0, pm->_process_data.utime);
+
     pm->fetch();
-    EXPECT_EQ(5959, pm->__stat.utime);
+
+    // peek
+    EXPECT_EQ(5959, pm->_process_data.utime);
+    EXPECT_EQ(4, pm->_process_data._threads);
+    EXPECT_EQ(400, pm->_process_data._thread_data[0].utime);    
+    EXPECT_EQ(4133, pm->_process_data._thread_data[1].utime);    
+    EXPECT_EQ(3157, pm->_process_data._thread_data[2].utime);
+    EXPECT_EQ(3403, pm->_process_data._thread_data[3].utime);
+}
+
+TEST(ProcessMonitor, ComputeCorrectProcfsPath)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("/proc");
+    
+    EXPECT_STREQ("/proc", pm->global_path());
+    EXPECT_STREQ("/proc/42", pm->process_path(42));
+    EXPECT_STREQ("/proc/42/task/1732", pm->thread_path(42, 1732));
 }
 
 TEST(ProcessMonitor, GetNumberOfThreads)
 {
     ProcessMonitor* pm = new ProcessMonitor(42);
-    pm->proc_path("test/proc");
+    pm->procfs_path("test/proc");
 
-    EXPECT_EQ(4, pm->threads(42));
+    EXPECT_EQ(4, pm->parse_thread_count(42));
 }
 
 TEST(ProcessMonitor, GetThreadIdsForPid)
 {
     ProcessMonitor* pm = new ProcessMonitor(42);
-    pm->proc_path("test/proc");
+    pm->procfs_path("test/proc");
 
     int* tids;
-    int tcnt = pm->thread_ids(42, &tids);
+    int tcnt = pm->parse_thread_ids(42, &tids);
     
     EXPECT_EQ(4, tcnt);
     
@@ -53,10 +71,25 @@ TEST(ProcessMonitor, GetThreadIdsForPid)
     free(tids);
 }
 
+TEST(ProcessMonitor, GetAttribute)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
+    
+    pm->fetch();
+    
+    EXPECT_EQ(5959, pm->utime());
+    
+    EXPECT_EQ(400, pm->utime(0));
+    EXPECT_EQ(4133, pm->utime(1));
+    EXPECT_EQ(3157, pm->utime(2));
+    EXPECT_EQ(3403, pm->utime(3));
+}
+
 TEST(ProcessMonitor, ParseSystemStat)
 {
     ProcessMonitor* pm = new ProcessMonitor(42);
-    pm->proc_path("test/proc");
+    pm->procfs_path("test/proc");
 
     stat_data_t stat_data;
     pm->parse_stat(&stat_data);
@@ -75,9 +108,9 @@ TEST(ProcessMonitor, ParseSystemStat)
 TEST(ProcessMonitor, ParseProcessStat)
 {
     ProcessMonitor* pm = new ProcessMonitor(42);
-    pm->proc_path("test/proc");
+    pm->procfs_path("test/proc");
 
-    proc_stat_data_t stat_data;
+    process_data_t stat_data;
     pm->parse_proc_stat(42, &stat_data);
 
     EXPECT_EQ(4197, stat_data.pid);
@@ -129,9 +162,9 @@ TEST(ProcessMonitor, ParseProcessStat)
 TEST(ProcessMonitor, ParseProcessThreadStat)
 {
     ProcessMonitor* pm = new ProcessMonitor(42);
-    pm->proc_path("test/proc");
+    pm->procfs_path("test/proc");
 
-    thread_stat_data_t stat_data;
+    thread_data_t stat_data;
     pm->parse_thread_stat(42, 1732, &stat_data);
                
     EXPECT_EQ(1732, stat_data.pid);

@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <pthread.h>
 
-#define DEFAULT_PROC_PATH "/proc"
+#define DEFAULT_PROCFS_PATH "/proc"
 
 struct stat_data
 {
@@ -18,8 +18,21 @@ struct stat_data
 
 typedef struct stat_data stat_data_t;
 
-struct proc_stat_data
+struct process_data;
+
+typedef struct process_data process_data_t;
+typedef struct process_data thread_data_t;
+    
+struct process_data
 {
+    int _threads;
+    
+    thread_data_t* _thread_data;
+    
+    unsigned long utime;
+
+    //
+    
     int pid; // %d
     char comm[20]; // %s executable name
     char state; // %c char representing state
@@ -34,9 +47,9 @@ struct proc_stat_data
     unsigned long majflt; // %lu major page faults
     unsigned long cmajflt; // %lu major faults of waited-for children
 
-    unsigned long utime; // %lu time spent in user mode in clock ticks (divide by sysconf(_SC_CLK_TCK)), includes guest time
+    // unsigned long utime; // %lu time spent in user mode in clock ticks (divide by sysconf(_SC_CLK_TCK)), includes guest time
     unsigned long stime; // %lu time spent in kernel mode in clock ticks (divide by sysconf(_SC_CLK_TCK)
-
+    
     unsigned long cutime; // %lu time spent in user mode of waited-for children in clock ticks (divide by sysconf(_SC_CLK_TCK)), includes guest time
     unsigned long cstime; // %lu time spent in kernel mode of waited-for children in clock ticks (divide by sysconf(_SC_CLK_TCK)
 
@@ -79,50 +92,55 @@ struct proc_stat_data
     long cguest_time; // %ld Guest time  of  the process's children, measured in clock ticks (divide by sysconf(_SC_CLK_TCK).
 };
 
-typedef struct proc_stat_data proc_stat_data_t;
-typedef struct proc_stat_data thread_stat_data_t;
-
 class ProcessMonitor
 {
     pthread_t __runner;
 
     int __pid;
     unsigned __interval;
-    char* __proc_path;
-
+    char* __procfs_path;
+    
 public:
+
+    int __threads;
 
     stat_data_t __system_stat;
     stat_data_t __last_system_stat;    
 
-    proc_stat_data_t __stat;
-    proc_stat_data_t __last_stat;    
+    process_data_t _process_data;
+    process_data_t __last_stat;    
 
     // constructors
     explicit ProcessMonitor(int pid);
-
+    
     // methods
     void fetch();
-    void parse_proc_stat(int pid, proc_stat_data_t* stat);
-    void parse_thread_stat(int pid, int tid, thread_stat_data_t* stat);
+    void parse_proc_stat(int pid, process_data_t* stat);
+    void parse_thread_stat(int pid, int tid, thread_data_t* stat);
     void parse_stat(stat_data_t* stat);    
-    void parse_from(FILE* stream, proc_stat_data_t* stat);
+    void parse_from(FILE* stream, process_data_t* stat);
     void parse_stat_data(FILE* stream, stat_data_t* stat_data);
     void parse(const char* stream);
     
-    int threads(int pid);
-    int thread_ids(int pid, int** ptids);
+    int parse_thread_count(int pid);
+    int parse_thread_ids(int pid, int** ptids);
 
     // control
     static void* run(void* data);
     void start();
     void stop();
 
+    // extended accessors
+    char* global_path();
+    char* process_path(int pid);
+    char* thread_path(int pid, int tid);    
+
     // accessors
     int pid();
     unsigned interval();
-    char* proc_path();
-    void proc_path(char* proc_path);
+    char* procfs_path();
+    void procfs_path(char* procfs_path);
 
     unsigned long utime();
+    unsigned long utime(int tid);
 };
