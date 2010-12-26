@@ -13,6 +13,9 @@ ProcessMonitor::ProcessMonitor(int pid)
     
     _procfs_path = (char*) malloc(strlen(DEFAULT_PROCFS_PATH) + 1);
     strcpy(_procfs_path, DEFAULT_PROCFS_PATH);
+    
+    // todo
+    _system_data.cpu_count = 0;
 }
 
 void* ProcessMonitor::run(void* data)
@@ -130,8 +133,8 @@ void ProcessMonitor::parse_system_stat(system_data_t* stat)
     char filename[128]; //todo
     snprintf(filename, 128, "%s/stat", _procfs_path);
     
-    // todo
-    if (stat->cpu == NULL)
+    // BIG todo
+    if (1)
     {
         FILE* stream = fopen(filename, "r");
         parse_cpu_count_data(stream, stat);
@@ -161,6 +164,8 @@ void ProcessMonitor::parse_stat_data(FILE* stream, system_data_t* stat_data)
     fscanf(stream, "cpu %lu %lu %lu %lu %lu %lu %lu %lu %lu\n",
         &stat_data->cpus.utime, &stat_data->cpus.nice, &stat_data->cpus.stime, &stat_data->cpus.idle, &stat_data->cpus.iowait,
         &stat_data->cpus.irq, &stat_data->cpus.softirq, &stat_data->cpus.steal, &stat_data->cpus.guest);
+        
+    stat_data->cpus.total = stat_data->cpus.utime + stat_data->cpus.stime + stat_data->cpus.idle;
 
     int i = 0;
 
@@ -169,7 +174,11 @@ void ProcessMonitor::parse_stat_data(FILE* stream, system_data_t* stat_data)
         fscanf(stream, "cpu%*d %lu %lu %lu %lu %lu %lu %lu %lu %lu\n",
             &stat_data->cpu[i].utime, &stat_data->cpu[i].nice, &stat_data->cpu[i].stime, &stat_data->cpu[i].idle, &stat_data->cpu[i].iowait,
             &stat_data->cpu[i].irq, &stat_data->cpu[i].softirq, &stat_data->cpu[i].steal, &stat_data->cpu[i].guest)
-    ) { ++i; }
+    )
+    {
+        stat_data->cpu[i].total = stat_data->cpu[i].utime + stat_data->cpu[i].stime + stat_data->cpu[i].idle;
+        ++i;
+    }
 }
 
 void ProcessMonitor::parse_cpu_count_data(FILE* stream, system_data_t* stat_data)

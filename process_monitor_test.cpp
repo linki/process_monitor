@@ -125,7 +125,7 @@ TEST(ProcessMonitor, ParseSystemStatAllCPUS)
     system_data_t system_data;
     pm->parse_system_stat(&system_data);
 
-//    EXPECT_EQ(4611536, system_data.cpus.total);
+    EXPECT_EQ(4611536, system_data.cpus.total);
     EXPECT_EQ(2904, system_data.cpus.utime);
     EXPECT_EQ(0, system_data.cpus.nice);
     EXPECT_EQ(2375, system_data.cpus.stime);
@@ -136,7 +136,7 @@ TEST(ProcessMonitor, ParseSystemStatAllCPUS)
     EXPECT_EQ(0, system_data.cpus.steal);
     EXPECT_EQ(0, system_data.cpus.guest);
 
-    //EXPECT_EQ(382549, system_data.cpu[0].total);
+    EXPECT_EQ(382549, system_data.cpu[0].total);
     EXPECT_EQ(435, system_data.cpu[0].utime);
     EXPECT_EQ(0, system_data.cpu[0].nice);
     EXPECT_EQ(253, system_data.cpu[0].stime);
@@ -147,7 +147,7 @@ TEST(ProcessMonitor, ParseSystemStatAllCPUS)
     EXPECT_EQ(0, system_data.cpu[0].steal);
     EXPECT_EQ(0, system_data.cpu[0].guest);
     
-    //EXPECT_EQ(384465, system_data.cpu[5].total);    
+    EXPECT_EQ(384465, system_data.cpu[5].total);    
     EXPECT_EQ(100, system_data.cpu[5].utime);
     EXPECT_EQ(0, system_data.cpu[5].nice);
     EXPECT_EQ(72, system_data.cpu[5].stime);
@@ -158,7 +158,7 @@ TEST(ProcessMonitor, ParseSystemStatAllCPUS)
     EXPECT_EQ(0, system_data.cpu[5].steal);
     EXPECT_EQ(0, system_data.cpu[5].guest);
     
-    //EXPECT_EQ(384606, system_data.cpu[11].total);    
+    EXPECT_EQ(384606, system_data.cpu[11].total);    
     EXPECT_EQ(25, system_data.cpu[11].utime);
     EXPECT_EQ(0, system_data.cpu[11].nice);
     EXPECT_EQ(131, system_data.cpu[11].stime);
