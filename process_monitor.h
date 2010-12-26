@@ -3,7 +3,7 @@
 
 #define DEFAULT_PROCFS_PATH "/proc"
 
-struct stat_data
+struct cpu_data
 {
     unsigned long utime; // user mode
     unsigned long nice; // user mode with low priority
@@ -16,7 +16,15 @@ struct stat_data
     unsigned long guest; // time spent running a virtual CPU for guest operating systems under the control of the Linux kernel
 };
 
-typedef struct stat_data stat_data_t;
+typedef struct cpu_data cpu_data_t;
+
+struct system_data
+{
+    cpu_data_t cpus;
+    cpu_data_t* cpu;
+};
+
+typedef struct system_data system_data_t;
 
 struct process_data;
 
@@ -96,16 +104,16 @@ class ProcessMonitor
 {
     pthread_t __runner;
 
-    int __pid;
-    unsigned __interval;
-    char* __procfs_path;
+    int _pid;
+    unsigned _interval;
+    char* _procfs_path;
     
 public:
 
     int __threads;
 
-    stat_data_t __system_stat;
-    stat_data_t __last_system_stat;    
+    cpu_data_t __system_stat;
+    cpu_data_t __last_system_stat;    
 
     process_data_t _process_data;
     process_data_t __last_stat;    
@@ -117,10 +125,15 @@ public:
     void fetch();
     void parse_proc_stat(int pid, process_data_t* stat);
     void parse_thread_stat(int pid, int tid, thread_data_t* stat);
-    void parse_stat(stat_data_t* stat);    
+    void parse_system_stat(system_data_t* system_data);
+        
     void parse_from(FILE* stream, process_data_t* stat);
-    void parse_stat_data(FILE* stream, stat_data_t* stat_data);
+    void parse_stat_data(FILE* stream, system_data_t* stat_data);
+
+    
     void parse(const char* stream);
+    
+    void parse_cpu_data(int cid, FILE* stream, cpu_data_t* cpu_data);
     
     int parse_thread_count(int pid);
     int parse_thread_ids(int pid, int** ptids);
@@ -131,15 +144,14 @@ public:
     void stop();
 
     // extended accessors
-    char* global_path();
-    char* process_path(int pid);
-    char* thread_path(int pid, int tid);    
+    char* process_path(int pid, char** ps);
+    char* thread_path(int pid, int tid, char** ps);    
 
     // accessors
     int pid();
     unsigned interval();
     char* procfs_path();
-    void procfs_path(char* procfs_path);
+    void procfs_path(const char* procfs_path);
 
     int threads();
     

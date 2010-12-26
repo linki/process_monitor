@@ -14,11 +14,11 @@ int main (int argc, const char* argv[])
 	else
 	{
 		printf("USAGE: %s PID\n", argv[0]);
-		return -1;
+		return EXIT_FAILURE;
 	}
 
 	ProcessMonitor* pm = new ProcessMonitor(pid);
-    // pm->procfs_path("test/proc");
+    pm->procfs_path("test/proc");
 
     pm->start();
 
@@ -38,7 +38,7 @@ int main (int argc, const char* argv[])
 
     pm->stop();
 
-    return 0;
+    return EXIT_SUCCESS;
 }
 
 

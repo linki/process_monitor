@@ -3,13 +3,16 @@
 #include <unistd.h>
 #include <pthread.h>
 #include <dirent.h>
+#include <string.h>
 #include "process_monitor.h"
 
 ProcessMonitor::ProcessMonitor(int pid)
 {
-	__pid = pid;
-    __interval = 1;
-    __procfs_path = DEFAULT_PROCFS_PATH;
+	_pid = pid;
+    _interval = 1;
+    
+    _procfs_path = (char*) malloc(strlen(DEFAULT_PROCFS_PATH) + 1);
+    strcpy(_procfs_path, DEFAULT_PROCFS_PATH);
 }
 
 void* ProcessMonitor::run(void* data)
@@ -64,7 +67,7 @@ void ProcessMonitor::stop()
 void ProcessMonitor::fetch()
 {
     char filename[32]; //todo
-    snprintf(filename, 32, "%s/%d/stat", __procfs_path, __pid);
+    snprintf(filename, 32, "%s/%d/stat", _procfs_path, _pid);
     
     // __last_stat = _process_data;
 
@@ -73,20 +76,20 @@ void ProcessMonitor::fetch()
     fclose(stream);
     
     int* tids;
-    _process_data._threads = parse_thread_ids(__pid, &tids);
+    _process_data._threads = parse_thread_ids(_pid, &tids);
     _process_data._thread_data = (thread_data_t*) malloc(_process_data._threads * sizeof(thread_data_t));
     
     for (int i = 0; i < _process_data._threads; ++i)
     {
         char threadfile[64]; //todo
-        snprintf(threadfile, 64, "%s/%d/task/%d/stat", __procfs_path, __pid, tids[i]);
+        snprintf(threadfile, 64, "%s/%d/task/%d/stat", _procfs_path, _pid, tids[i]);
         
         FILE* stream = fopen(threadfile, "r");
         parse_from(stream, &_process_data._thread_data[i]);
         fclose(stream);
     }
     
-    // snprintf(filename, 32, "%s/stat", __procfs_path);
+    // snprintf(filename, 32, "%s/stat", _procfs_path);
     // stream = fopen(filename, "r");
     // 
     // __last_system_stat = __system_stat;
@@ -98,7 +101,7 @@ void ProcessMonitor::fetch()
 void ProcessMonitor::parse_proc_stat(int pid, process_data_t* stat)
 {
     char filename[32]; //todo
-    snprintf(filename, 32, "%s/%d/stat", __procfs_path, pid);
+    snprintf(filename, 32, "%s/%d/stat", _procfs_path, pid);
 
     FILE* stream = fopen(filename, "r");
     parse_from(stream, stat);
@@ -109,17 +112,20 @@ void ProcessMonitor::parse_proc_stat(int pid, process_data_t* stat)
 void ProcessMonitor::parse_thread_stat(int pid, int tid, thread_data_t* stat)
 {
     char filename[64]; //todo
-    snprintf(filename, 64, "%s/%d/task/%d/stat", __procfs_path, pid, tid);
+    snprintf(filename, 64, "%s/%d/task/%d/stat", _procfs_path, pid, tid);
 
     FILE* stream = fopen(filename, "r");
     parse_from(stream, stat);
     fclose(stream);
 }
 
-void ProcessMonitor::parse_stat(stat_data_t* stat)
+void ProcessMonitor::parse_system_stat(system_data_t* stat)
 {
     char filename[32]; //todo
-    snprintf(filename, 32, "%s/stat", __procfs_path);
+    snprintf(filename, 32, "%s/stat", _procfs_path);
+    
+    // todo
+    stat->cpu = (cpu_data_t*) malloc(12 * sizeof(cpu_data_t));
 
     FILE* stream = fopen(filename, "r");
     parse_stat_data(stream, stat);
@@ -138,11 +144,31 @@ void ProcessMonitor::parse_from(FILE* stream, process_data_t* stat)
         &stat->delayacct_blkio_ticks, &stat->guest_time, &stat->cguest_time);
 }
 
-void ProcessMonitor::parse_stat_data(FILE* stream, stat_data_t* stat_data)
+void ProcessMonitor::parse_stat_data(FILE* stream, system_data_t* stat_data)
 {
-    fscanf(stream, "cpu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
-        &stat_data->utime, &stat_data->nice, &stat_data->stime, &stat_data->idle, &stat_data->iowait,
-        &stat_data->irq, &stat_data->softirq, &stat_data->steal, &stat_data->guest);
+    fscanf(stream, "cpu %lu %lu %lu %lu %lu %lu %lu %lu %lu\n",
+        &stat_data->cpus.utime, &stat_data->cpus.nice, &stat_data->cpus.stime, &stat_data->cpus.idle, &stat_data->cpus.iowait,
+        &stat_data->cpus.irq, &stat_data->cpus.softirq, &stat_data->cpus.steal, &stat_data->cpus.guest);
+
+    int i = 0;
+
+    while
+    (
+        fscanf(stream, "cpu%*d %lu %lu %lu %lu %lu %lu %lu %lu %lu\n",
+            &stat_data->cpu[i].utime, &stat_data->cpu[i].nice, &stat_data->cpu[i].stime, &stat_data->cpu[i].idle, &stat_data->cpu[i].iowait,
+            &stat_data->cpu[i].irq, &stat_data->cpu[i].softirq, &stat_data->cpu[i].steal, &stat_data->cpu[i].guest)
+    ) { ++i; }
+}
+
+void ProcessMonitor::parse_cpu_data(int cid, FILE* stream, cpu_data_t* cpu_data)
+{
+    int n;
+    n = fscanf(stream, "cpu %*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu\n");
+
+    n = fscanf(stream, "cpu0 %lu %lu %lu %lu %lu %lu %lu %lu %lu\n",
+        &cpu_data->utime, &cpu_data->nice, &cpu_data->stime, &cpu_data->idle, &cpu_data->iowait,
+        &cpu_data->irq, &cpu_data->softirq, &cpu_data->steal, &cpu_data->guest);
+     
 }
 
 void ProcessMonitor::parse(const char* stream)
@@ -170,7 +196,7 @@ int ProcessMonitor::parse_thread_ids(int pid, int** ptids)
     struct dirent **folders;
     
     char task_path[64]; //todo
-    snprintf(task_path, 64, "%s/%d/task", __procfs_path, pid);
+    snprintf(task_path, 64, "%s/%d/task", _procfs_path, pid);
     
     int tcnt = scandir(task_path, &folders, NULL, NULL) - 2;
 
@@ -191,23 +217,24 @@ int ProcessMonitor::parse_thread_ids(int pid, int** ptids)
     return tcnt;
 }
 
-char* ProcessMonitor::global_path()
+char* ProcessMonitor::process_path(int pid, char** ps)
 {
-    return __procfs_path;
+    int length = strlen(_procfs_path) + 10; // todo roughly + 10
+    *ps = (char*) malloc(length);
+    
+    snprintf(*ps, length, "%s/%d", _procfs_path, pid);
+    
+    return *ps;
 }
 
-char* ProcessMonitor::process_path(int pid)
+char* ProcessMonitor::thread_path(int pid, int tid, char** ps)
 {
-    char process_path[64]; //todo
-    snprintf(process_path, 64, "%s/%d", __procfs_path, pid);
-    return process_path;
-}
-
-char* ProcessMonitor::thread_path(int pid, int tid)
-{
-    char thread_path[64]; //todo
-    snprintf(thread_path, 64, "%s/%d/task/%d", __procfs_path, pid, tid);
-    return thread_path;
+    int length = strlen(_procfs_path) + 20; // todo roughly + 20
+    *ps = (char*) malloc(length);
+    
+    snprintf(*ps, length, "%s/%d/task/%d", _procfs_path, pid, tid);
+    
+    return *ps;
 }
 
 int ProcessMonitor::threads()
@@ -217,22 +244,23 @@ int ProcessMonitor::threads()
     
 int ProcessMonitor::pid()
 {
-    return __pid;
+    return _pid;
 }
 
 unsigned ProcessMonitor::interval()
 {
-    return __interval;
+    return _interval;
 }
 
 char* ProcessMonitor::procfs_path()
 {
-    return __procfs_path;
+    return _procfs_path;
 }
 
-void ProcessMonitor::procfs_path(char* procfs_path)
+void ProcessMonitor::procfs_path(const char* procfs_path)
 {
-    __procfs_path = procfs_path; // todo strcpy
+    _procfs_path = (char*) realloc(_procfs_path, strlen(procfs_path) + 1);
+    strcpy(_procfs_path, procfs_path);
 }
 
 unsigned long ProcessMonitor::utime()
