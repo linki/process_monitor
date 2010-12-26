@@ -5,7 +5,7 @@
 
 int main (int argc, const char* argv[])
 {
-    int pid;
+    pid_t pid;
 
 	if (argc == 2)
 	{
@@ -24,16 +24,23 @@ int main (int argc, const char* argv[])
 
     while (1)
     {
-	    printf("s: %c p: %lu", pm->state(), pm->utime());
-	    
-        for (int i = 0; i < pm->threads(); ++i)
+        // printf("s: %c p: %lu", pm->state(), pm->utime());
+        // 
+        //         for (int i = 0; i < pm->threads(); ++i)
+        //         {
+        //             printf(" t%d: %lu", i, pm->utime(i));
+        //         }
+        
+        printf("a: %lu", pm->cpus());
+        
+        for (int i = 0; i < pm->cpu_count(); ++i)
         {
-            printf(" t%d: %lu", i, pm->utime(i));
+            printf(" c%d: %lu", i, pm->cpu(i));
         }
 	    
         printf("\n");
         
-        sleep(0.1);
+        sleep(1);
     }
 
     pm->stop();

@@ -87,6 +87,8 @@ TEST(ProcessMonitor, GetAttributes)
     
     pm->fetch();
     
+    EXPECT_EQ(12, pm->cpu_count());
+    
     EXPECT_EQ(2904, pm->cpus());
     EXPECT_EQ(435, pm->cpu(0));
     EXPECT_EQ(100, pm->cpu(5));
@@ -104,6 +106,17 @@ TEST(ProcessMonitor, GetAttributes)
     EXPECT_EQ('S', pm->state());
 }
 
+TEST(ProcessMonitor, ParseCPUCount)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
+
+    system_data_t system_data;
+    pm->parse_cpu_count(&system_data);
+    
+    EXPECT_EQ(12, system_data.cpu_count);
+}    
+    
 TEST(ProcessMonitor, ParseSystemStatAllCPUS)
 {
     ProcessMonitor* pm = new ProcessMonitor(42);

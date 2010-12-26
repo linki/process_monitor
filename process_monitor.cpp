@@ -119,7 +119,13 @@ void ProcessMonitor::parse_system_stat(system_data_t* stat)
     snprintf(filename, 32, "%s/stat", _procfs_path);
     
     // todo
-    stat->cpu = (cpu_data_t*) malloc(12 * sizeof(cpu_data_t));
+    if (stat->cpu == NULL)
+    {
+        FILE* stream = fopen(filename, "r");
+        parse_cpu_count_data(stream, stat);
+        stat->cpu = (cpu_data_t*) malloc(stat->cpu_count * sizeof(cpu_data_t));
+        fclose(stream);
+    }
 
     FILE* stream = fopen(filename, "r");
     parse_stat_data(stream, stat);
@@ -154,6 +160,14 @@ void ProcessMonitor::parse_stat_data(FILE* stream, system_data_t* stat_data)
     ) { ++i; }
 }
 
+void ProcessMonitor::parse_cpu_count_data(FILE* stream, system_data_t* stat_data)
+{
+    int i;
+    
+    while (fscanf(stream, "cpu%d %*u %*u %*u %*u %*u %*u %*u %*u %*u\n", &i));
+           
+    stat_data->cpu_count = i + 1;
+}
 void ProcessMonitor::parse(const char* stream)
 {
     sscanf(stream, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %llu %lu %ld %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %d %d %u %u %llu %lu %ld",
@@ -166,6 +180,17 @@ void ProcessMonitor::parse(const char* stream)
         &_process_data.delayacct_blkio_ticks, &_process_data.guest_time, &_process_data.cguest_time);
 }
 
+void ProcessMonitor::parse_cpu_count(system_data_t* stat_data)
+{
+    char stat_path[16]; //todo
+    snprintf(stat_path, 16, "%s/stat", _procfs_path);
+    
+    FILE* stream = fopen(stat_path, "r");
+    parse_cpu_count_data(stream, stat_data);
+    fclose(stream);
+}
+
+// todo
 int ProcessMonitor::parse_thread_count(int pid)
 {
     int* pids;
@@ -220,6 +245,11 @@ char* ProcessMonitor::thread_path(int pid, int tid, char** ps)
     return *ps;
 }
 
+int ProcessMonitor::cpu_count()
+{
+    return _system_data.cpu_count;
+}
+    
 unsigned long ProcessMonitor::cpus()
 {
     return _system_data.cpus.utime;

@@ -20,6 +20,7 @@ typedef struct cpu_data cpu_data_t;
 
 struct system_data
 {
+    int cpu_count;
     cpu_data_t cpus;
     cpu_data_t* cpu;
 };
@@ -131,10 +132,11 @@ public:
         
     void parse_from(FILE* stream, process_data_t* stat);
     void parse_stat_data(FILE* stream, system_data_t* stat_data);
-
+    void parse_cpu_count_data(FILE* stream, system_data_t* stat_data);
     
     void parse(const char* stream);
     
+    void parse_cpu_count(system_data_t* stat_data);
     
     int parse_thread_count(int pid);
     int parse_thread_ids(int pid, int** ptids);
@@ -154,6 +156,8 @@ public:
     char* procfs_path();
     void procfs_path(const char* procfs_path);
 
+    int cpu_count();
+    
     unsigned long cpus();
     unsigned long cpu(int cid);
 
