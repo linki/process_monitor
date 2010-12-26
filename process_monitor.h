@@ -102,7 +102,7 @@ struct process_data
 
 class ProcessMonitor
 {
-    pthread_t __runner;
+    pthread_t _runner;
 
     int _pid;
     unsigned _interval;
@@ -114,6 +114,8 @@ public:
 
     cpu_data_t __system_stat;
     cpu_data_t __last_system_stat;    
+    
+    system_data_t _system_data;
 
     process_data_t _process_data;
     process_data_t __last_stat;    
@@ -133,7 +135,6 @@ public:
     
     void parse(const char* stream);
     
-    void parse_cpu_data(int cid, FILE* stream, cpu_data_t* cpu_data);
     
     int parse_thread_count(int pid);
     int parse_thread_ids(int pid, int** ptids);
@@ -153,8 +154,13 @@ public:
     char* procfs_path();
     void procfs_path(const char* procfs_path);
 
+    unsigned long cpus();
+    unsigned long cpu(int cid);
+
     int threads();
     
     unsigned long utime();
     unsigned long utime(int tid);
+    
+    char state();
 };

@@ -40,7 +40,7 @@ void ProcessMonitor::start()
 	pthread_attr_init(&attr);
 	pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
 
-    int status = pthread_create(&__runner, &attr, run, this);
+    int status = pthread_create(&_runner, &attr, run, this);
 
 	if (status)
 	{
@@ -53,9 +53,9 @@ void ProcessMonitor::start()
 
 void ProcessMonitor::stop()
 {
-    pthread_cancel(__runner);
+    pthread_cancel(_runner);
 
-	int status = pthread_join(__runner, NULL);
+	int status = pthread_join(_runner, NULL);
 
 	if (status)
 	{
@@ -89,13 +89,7 @@ void ProcessMonitor::fetch()
         fclose(stream);
     }
     
-    // snprintf(filename, 32, "%s/stat", _procfs_path);
-    // stream = fopen(filename, "r");
-    // 
-    // __last_system_stat = __system_stat;
-    // parse_stat_data(stream, &__system_stat);    
-    // 
-    // fclose(stream);
+    parse_system_stat(&_system_data);    
 }
 
 void ProcessMonitor::parse_proc_stat(int pid, process_data_t* stat)
@@ -158,17 +152,6 @@ void ProcessMonitor::parse_stat_data(FILE* stream, system_data_t* stat_data)
             &stat_data->cpu[i].utime, &stat_data->cpu[i].nice, &stat_data->cpu[i].stime, &stat_data->cpu[i].idle, &stat_data->cpu[i].iowait,
             &stat_data->cpu[i].irq, &stat_data->cpu[i].softirq, &stat_data->cpu[i].steal, &stat_data->cpu[i].guest)
     ) { ++i; }
-}
-
-void ProcessMonitor::parse_cpu_data(int cid, FILE* stream, cpu_data_t* cpu_data)
-{
-    int n;
-    n = fscanf(stream, "cpu %*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu %*lu\n");
-
-    n = fscanf(stream, "cpu0 %lu %lu %lu %lu %lu %lu %lu %lu %lu\n",
-        &cpu_data->utime, &cpu_data->nice, &cpu_data->stime, &cpu_data->idle, &cpu_data->iowait,
-        &cpu_data->irq, &cpu_data->softirq, &cpu_data->steal, &cpu_data->guest);
-     
 }
 
 void ProcessMonitor::parse(const char* stream)
@@ -237,6 +220,16 @@ char* ProcessMonitor::thread_path(int pid, int tid, char** ps)
     return *ps;
 }
 
+unsigned long ProcessMonitor::cpus()
+{
+    return _system_data.cpus.utime;
+}
+
+unsigned long ProcessMonitor::cpu(int cid)
+{
+    return _system_data.cpu[cid].utime;
+}
+
 int ProcessMonitor::threads()
 {
     return _process_data._threads;
@@ -271,4 +264,9 @@ unsigned long ProcessMonitor::utime()
 unsigned long ProcessMonitor::utime(int tid)
 {
     return _process_data._thread_data[tid].utime;
+}
+
+char ProcessMonitor::state()
+{
+    return _process_data.state;
 }

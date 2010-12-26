@@ -14,7 +14,7 @@ int main (int argc, const char* argv[])
 	else
 	{
 		printf("USAGE: %s PID\n", argv[0]);
-		return EXIT_FAILURE;
+		exit(EXIT_FAILURE);
 	}
 
 	ProcessMonitor* pm = new ProcessMonitor(pid);
@@ -24,7 +24,7 @@ int main (int argc, const char* argv[])
 
     while (1)
     {
-	    printf("p: %lu", pm->utime());
+	    printf("s: %c p: %lu", pm->state(), pm->utime());
 	    
         for (int i = 0; i < pm->threads(); ++i)
         {
@@ -33,12 +33,12 @@ int main (int argc, const char* argv[])
 	    
         printf("\n");
         
-        sleep(1);
+        sleep(0.1);
     }
 
     pm->stop();
 
-    return EXIT_SUCCESS;
+    exit(EXIT_SUCCESS);
 }
 
 

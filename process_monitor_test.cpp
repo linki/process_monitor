@@ -29,6 +29,7 @@ TEST(ProcessMonitor, FetchUpdatesTheData)
     // peek
     EXPECT_EQ(5959, pm->_process_data.utime);
     EXPECT_EQ(4, pm->_process_data._threads);
+    
     EXPECT_EQ(400, pm->_process_data._thread_data[0].utime);    
     EXPECT_EQ(4133, pm->_process_data._thread_data[1].utime);    
     EXPECT_EQ(3157, pm->_process_data._thread_data[2].utime);
@@ -86,7 +87,12 @@ TEST(ProcessMonitor, GetAttributes)
     
     pm->fetch();
     
-    EXPECT_EQ(4, pm->threads());    
+    EXPECT_EQ(2904, pm->cpus());
+    EXPECT_EQ(435, pm->cpu(0));
+    EXPECT_EQ(100, pm->cpu(5));
+    EXPECT_EQ(25, pm->cpu(11));
+    
+    EXPECT_EQ(4, pm->threads());
     
     EXPECT_EQ(5959, pm->utime());
     
@@ -94,26 +100,9 @@ TEST(ProcessMonitor, GetAttributes)
     EXPECT_EQ(4133, pm->utime(1));
     EXPECT_EQ(3157, pm->utime(2));
     EXPECT_EQ(3403, pm->utime(3));
+    
+    EXPECT_EQ('S', pm->state());
 }
-
-// TEST(ProcessMonitor, ParseSystemStatCPUSummary)
-// {
-//     ProcessMonitor* pm = new ProcessMonitor(42);
-//     pm->procfs_path("test/proc");
-// 
-//     cpu_data_t stat_data;
-//     pm->parse_stat(&stat_data);
-// 
-//     EXPECT_EQ(2904, stat_data.utime);
-//     EXPECT_EQ(0, stat_data.nice);
-//     EXPECT_EQ(2375, stat_data.stime);
-//     EXPECT_EQ(4606257, stat_data.idle);
-//     EXPECT_EQ(5670, stat_data.iowait);
-//     EXPECT_EQ(3, stat_data.irq);
-//     EXPECT_EQ(23, stat_data.softirq);
-//     EXPECT_EQ(0, stat_data.steal);
-//     EXPECT_EQ(0, stat_data.guest);
-// }
 
 TEST(ProcessMonitor, ParseSystemStatAllCPUS)
 {
@@ -162,38 +151,6 @@ TEST(ProcessMonitor, ParseSystemStatAllCPUS)
     EXPECT_EQ(0, system_data.cpu[11].softirq);
     EXPECT_EQ(0, system_data.cpu[11].steal);
     EXPECT_EQ(0, system_data.cpu[11].guest);
-}
-
-TEST(ProcessMonitor, ParseCPUx)
-{
-    ProcessMonitor* pm = new ProcessMonitor(42);
-    pm->procfs_path("test/proc");
-
-    cpu_data_t cpu_data;
-    
-    FILE* stream = fopen("test/proc/stat", "r");
-    pm->parse_cpu_data(0, stream, &cpu_data);
-    fclose(stream);
-    
-    // EXPECT_EQ(2904, cpu_data.utime);
-    // EXPECT_EQ(0, cpu_data.nice);
-    // EXPECT_EQ(2375, cpu_data.stime);
-    // EXPECT_EQ(4606257, cpu_data.idle);
-    // EXPECT_EQ(5670, cpu_data.iowait);
-    // EXPECT_EQ(3, cpu_data.irq);
-    // EXPECT_EQ(23, cpu_data.softirq);
-    // EXPECT_EQ(0, cpu_data.steal);
-    // EXPECT_EQ(0, cpu_data.guest);
-        
-    EXPECT_EQ(435, cpu_data.utime);
-    EXPECT_EQ(0, cpu_data.nice);
-    EXPECT_EQ(253, cpu_data.stime);
-    EXPECT_EQ(381861, cpu_data.idle);
-    EXPECT_EQ(2228, cpu_data.iowait);
-    EXPECT_EQ(2, cpu_data.irq);
-    EXPECT_EQ(4, cpu_data.softirq);
-    EXPECT_EQ(0, cpu_data.steal);
-    EXPECT_EQ(0, cpu_data.guest);
 }
 
 TEST(ProcessMonitor, ParseProcessStat)
