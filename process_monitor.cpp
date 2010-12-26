@@ -210,7 +210,11 @@ char* ProcessMonitor::thread_path(int pid, int tid)
     return thread_path;
 }
 
-
+int ProcessMonitor::threads()
+{
+    return _process_data._threads;
+}
+    
 int ProcessMonitor::pid()
 {
     return __pid;

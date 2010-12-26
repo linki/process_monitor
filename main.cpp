@@ -18,7 +18,7 @@ int main (int argc, const char* argv[])
 	}
 
 	ProcessMonitor* pm = new ProcessMonitor(pid);
-    pm->procfs_path("test/proc");
+    // pm->procfs_path("test/proc");
 
     pm->start();
 
@@ -28,7 +28,7 @@ int main (int argc, const char* argv[])
 	    
         for (int i = 0; i < pm->threads(); ++i)
         {
-            printf("t%d: %lu", i, pm->utime(i));
+            printf(" t%d: %lu", i, pm->utime(i));
         }
 	    
         printf("\n");

@@ -141,6 +141,8 @@ public:
     char* procfs_path();
     void procfs_path(char* procfs_path);
 
+    int threads();
+    
     unsigned long utime();
     unsigned long utime(int tid);
 };
