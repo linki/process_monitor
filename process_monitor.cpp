@@ -146,7 +146,7 @@ void ProcessMonitor::parse_from(FILE* stream, process_data_t* stat)
 
 void ProcessMonitor::parse_stat_data(FILE* stream, system_data_t* stat_data)
 {
-    fscanf(stream, "cpu %lu %lu %lu %lu %lu %lu %lu %lu %lu\n",
+    fscanf(stream, "cpu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
         &stat_data->cpus.utime, &stat_data->cpus.nice, &stat_data->cpus.stime, &stat_data->cpus.idle, &stat_data->cpus.iowait,
         &stat_data->cpus.irq, &stat_data->cpus.softirq, &stat_data->cpus.steal, &stat_data->cpus.guest);
 
@@ -154,7 +154,7 @@ void ProcessMonitor::parse_stat_data(FILE* stream, system_data_t* stat_data)
 
     while
     (
-        fscanf(stream, "cpu%*d %lu %lu %lu %lu %lu %lu %lu %lu %lu\n",
+        fscanf(stream, "\ncpu%*d %lu %lu %lu %lu %lu %lu %lu %lu %lu\n",
             &stat_data->cpu[i].utime, &stat_data->cpu[i].nice, &stat_data->cpu[i].stime, &stat_data->cpu[i].idle, &stat_data->cpu[i].iowait,
             &stat_data->cpu[i].irq, &stat_data->cpu[i].softirq, &stat_data->cpu[i].steal, &stat_data->cpu[i].guest)
     ) { ++i; }
@@ -164,7 +164,7 @@ void ProcessMonitor::parse_cpu_count_data(FILE* stream, system_data_t* stat_data
 {
     int i;
     
-    while (fscanf(stream, "cpu%d %*u %*u %*u %*u %*u %*u %*u %*u %*u\n", &i));
+    while (fscanf(stream, "\ncpu%d %*u %*u %*u %*u %*u %*u %*u %*u %*u", &i));
            
     stat_data->cpu_count = i + 1;
 }
