@@ -154,7 +154,7 @@ void ProcessMonitor::parse_stat_data(FILE* stream, system_data_t* stat_data)
 
     while
     (
-        fscanf(stream, "\ncpu%*d %lu %lu %lu %lu %lu %lu %lu %lu %lu\n",
+        fscanf(stream, "\ncpu%*d %lu %lu %lu %lu %lu %lu %lu %lu %lu",
             &stat_data->cpu[i].utime, &stat_data->cpu[i].nice, &stat_data->cpu[i].stime, &stat_data->cpu[i].idle, &stat_data->cpu[i].iowait,
             &stat_data->cpu[i].irq, &stat_data->cpu[i].softirq, &stat_data->cpu[i].steal, &stat_data->cpu[i].guest)
     ) { ++i; }
