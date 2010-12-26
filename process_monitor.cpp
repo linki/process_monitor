@@ -66,23 +66,24 @@ void ProcessMonitor::stop()
 
 void ProcessMonitor::fetch()
 {
-    char filename[32]; //todo
-    snprintf(filename, 32, "%s/%d/stat", _procfs_path, _pid);
+    char* stat_file_path;
+    process_stat_path(_pid, &stat_file_path);
     
-    // __last_stat = _process_data;
-
-    FILE* stream = fopen(filename, "r");
+    FILE* stream = fopen(stat_file_path, "r");
     parse_from(stream, &_process_data);
     fclose(stream);
     
+    free(stat_file_path);
+    
     int* tids;
     _process_data._threads = parse_thread_ids(_pid, &tids);
+    // todo free here or realloc or whatever
     _process_data._thread_data = (thread_data_t*) malloc(_process_data._threads * sizeof(thread_data_t));
     
     for (int i = 0; i < _process_data._threads; ++i)
     {
-        char threadfile[64]; //todo
-        snprintf(threadfile, 64, "%s/%d/task/%d/stat", _procfs_path, _pid, tids[i]);
+        char threadfile[128]; //todo
+        snprintf(threadfile, 128, "%s/%d/task/%d/stat", _procfs_path, _pid, tids[i]);
         
         FILE* stream = fopen(threadfile, "r");
         parse_from(stream, &_process_data._thread_data[i]);
@@ -94,8 +95,8 @@ void ProcessMonitor::fetch()
 
 void ProcessMonitor::parse_proc_stat(int pid, process_data_t* stat)
 {
-    char filename[32]; //todo
-    snprintf(filename, 32, "%s/%d/stat", _procfs_path, pid);
+    char filename[128]; //todo
+    snprintf(filename, 128, "%s/%d/stat", _procfs_path, pid);
 
     FILE* stream = fopen(filename, "r");
     parse_from(stream, stat);
@@ -105,8 +106,8 @@ void ProcessMonitor::parse_proc_stat(int pid, process_data_t* stat)
 
 void ProcessMonitor::parse_thread_stat(int pid, int tid, thread_data_t* stat)
 {
-    char filename[64]; //todo
-    snprintf(filename, 64, "%s/%d/task/%d/stat", _procfs_path, pid, tid);
+    char filename[128]; //todo
+    snprintf(filename, 128, "%s/%d/task/%d/stat", _procfs_path, pid, tid);
 
     FILE* stream = fopen(filename, "r");
     parse_from(stream, stat);
@@ -115,8 +116,8 @@ void ProcessMonitor::parse_thread_stat(int pid, int tid, thread_data_t* stat)
 
 void ProcessMonitor::parse_system_stat(system_data_t* stat)
 {
-    char filename[32]; //todo
-    snprintf(filename, 32, "%s/stat", _procfs_path);
+    char filename[128]; //todo
+    snprintf(filename, 128, "%s/stat", _procfs_path);
     
     // todo
     if (stat->cpu == NULL)
@@ -182,8 +183,8 @@ void ProcessMonitor::parse(const char* stream)
 
 void ProcessMonitor::parse_cpu_count(system_data_t* stat_data)
 {
-    char stat_path[16]; //todo
-    snprintf(stat_path, 16, "%s/stat", _procfs_path);
+    char stat_path[128]; //todo
+    snprintf(stat_path, 128, "%s/stat", _procfs_path);
     
     FILE* stream = fopen(stat_path, "r");
     parse_cpu_count_data(stream, stat_data);
@@ -198,15 +199,16 @@ int ProcessMonitor::parse_thread_count(int pid)
     free(pids);
     return tcnt;
 }
-    
+
+// todo sort for linux
 int ProcessMonitor::parse_thread_ids(int pid, int** ptids)
 {
     struct dirent **folders;
     
-    char task_path[64]; //todo
-    snprintf(task_path, 64, "%s/%d/task", _procfs_path, pid);
+    char task_path[128]; //todo
+    snprintf(task_path, 128, "%s/%d/task", _procfs_path, pid);
     
-    int tcnt = scandir(task_path, &folders, NULL, NULL) - 2;
+    int tcnt = scandir(task_path, &folders, NULL, alphasort) - 2;
 
     *ptids = (int*) malloc(tcnt * sizeof(int));
         
@@ -225,22 +227,22 @@ int ProcessMonitor::parse_thread_ids(int pid, int** ptids)
     return tcnt;
 }
 
-char* ProcessMonitor::process_path(int pid, char** ps)
+char* ProcessMonitor::process_stat_path(int pid, char** ps)
 {
-    int length = strlen(_procfs_path) + 10; // todo roughly + 10
+    int length = strlen(_procfs_path) + 20; // todo roughly + 20 for now
     *ps = (char*) malloc(length);
     
-    snprintf(*ps, length, "%s/%d", _procfs_path, pid);
+    snprintf(*ps, length, "%s/%d/stat", _procfs_path, pid);
     
     return *ps;
 }
 
-char* ProcessMonitor::thread_path(int pid, int tid, char** ps)
+char* ProcessMonitor::thread_stat_path(int pid, int tid, char** ps)
 {
-    int length = strlen(_procfs_path) + 20; // todo roughly + 20
+    int length = strlen(_procfs_path) + 30; // todo roughly + 20
     *ps = (char*) malloc(length);
     
-    snprintf(*ps, length, "%s/%d/task/%d", _procfs_path, pid, tid);
+    snprintf(*ps, length, "%s/%d/task/%d/stat", _procfs_path, pid, tid);
     
     return *ps;
 }

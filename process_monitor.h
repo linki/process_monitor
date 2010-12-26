@@ -147,8 +147,8 @@ public:
     void stop();
 
     // extended accessors
-    char* process_path(int pid, char** ps);
-    char* thread_path(int pid, int tid, char** ps);    
+    char* process_stat_path(int pid, char** ps);
+    char* thread_stat_path(int pid, int tid, char** ps);    
 
     // accessors
     int pid();

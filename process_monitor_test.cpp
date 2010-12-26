@@ -41,17 +41,17 @@ TEST(ProcessMonitor, ComputeCorrectProcfsPaths)
     ProcessMonitor* pm = new ProcessMonitor(42);
     pm->procfs_path("/proc");
     
-    char* process_path;
-    char* thread_path;
+    char* process_stat_path;
+    char* thread_stat_path;
     
-    pm->process_path(42, &process_path);
-    pm->thread_path(42, 1732, &thread_path);
+    pm->process_stat_path(42, &process_stat_path);
+    pm->thread_stat_path(42, 1732, &thread_stat_path);
     
-    EXPECT_STREQ("/proc/42", process_path);
-    EXPECT_STREQ("/proc/42/task/1732", thread_path);
+    EXPECT_STREQ("/proc/42/stat", process_stat_path);
+    EXPECT_STREQ("/proc/42/task/1732/stat", thread_stat_path);
     
-    free(process_path);
-    free(thread_path);
+    free(process_stat_path);
+    free(thread_stat_path);
 }
 
 TEST(ProcessMonitor, GetNumberOfThreads)
