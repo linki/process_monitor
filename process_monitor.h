@@ -3,6 +3,19 @@
 
 #define DEFAULT_PROCFS_PATH "/proc"
 
+struct process_datam
+{
+    unsigned long long size; // total program size
+    unsigned long long resident; // resident set size
+    unsigned long long share; // shared pages (from shared mappings)
+    unsigned long long text; // text (code)
+    unsigned long long lib; // library (unused in Linux 2.6)
+    unsigned long long data; // data + stack
+    unsigned long long dt; // dirty pages (unused in Linux 2.6)
+};
+
+typedef struct process_datam process_datam_t;
+
 struct cpu_data
 {
     unsigned long total; // total is the sum of utime, stime and idle
@@ -132,9 +145,13 @@ public:
     void parse_proc_stat(int pid, process_data_t* stat);
     void parse_thread_stat(int pid, int tid, thread_data_t* stat);
     void parse_system_stat(system_data_t* system_data);
+
+    void parse_process_statm(int pid, process_datam_t* data);
         
     void parse_from(FILE* stream, process_data_t* stat);
     void parse_stat_data(FILE* stream, system_data_t* stat_data);
+
+    void parse_statm_data(FILE* stream, process_datam_t* data);
     void parse_cpu_count_data(FILE* stream, system_data_t* stat_data);
     
     void parse(const char* stream);

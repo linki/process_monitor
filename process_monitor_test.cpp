@@ -281,6 +281,23 @@ TEST(ProcessMonitor, ParseProcessThreadStat)
     EXPECT_EQ(0, stat_data.cguest_time);
 }
 
+TEST(ProcessMonitor, ParseProcessStatm)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
+
+    process_datam_t data;
+    pm->parse_process_statm(42, &data);
+          
+    EXPECT_EQ(3543, data.size);
+    EXPECT_EQ(125, data.resident);
+    EXPECT_EQ(99, data.share);
+    EXPECT_EQ(2, data.text);
+    EXPECT_EQ(0, data.lib);
+    EXPECT_EQ(2117, data.data);
+    EXPECT_EQ(0, data.dt);
+}
+
 TEST(ProcessMonitor, ParseSystemStatm)
 {
     const char* stream = "119626 18050 6660 162 0 43782 0\n";

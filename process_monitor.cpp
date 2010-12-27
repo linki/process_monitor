@@ -147,6 +147,17 @@ void ProcessMonitor::parse_system_stat(system_data_t* stat)
     fclose(stream);
 }
 
+void ProcessMonitor::parse_process_statm(int pid, process_datam_t* data)
+{
+    char filename[128]; //todo
+    snprintf(filename, 128, "%s/%d/statm", _procfs_path, pid);
+    
+    FILE* stream = fopen(filename, "r");
+    parse_statm_data(stream, data);
+    fclose(stream);
+    
+}
+
 void ProcessMonitor::parse_from(FILE* stream, process_data_t* stat)
 {
     fscanf(stream, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %llu %lu %ld %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %d %d %u %u %llu %lu %ld",
@@ -183,6 +194,12 @@ void ProcessMonitor::parse_stat_data(FILE* stream, system_data_t* stat_data)
     }
 }
 
+void ProcessMonitor::parse_statm_data(FILE* stream, process_datam_t* data)
+{
+    fscanf(stream, "%llu %llu %llu %llu %llu %llu %llu\n",
+        &data->size, &data->resident, &data->share, &data->text, &data->lib, &data->data, &data->dt);    
+}
+    
 void ProcessMonitor::parse_cpu_count_data(FILE* stream, system_data_t* stat_data)
 {
     int i;
