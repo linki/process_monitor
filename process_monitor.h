@@ -164,6 +164,9 @@ public:
     
     int process_cpu_usage();
 
+    int global_thread_cpu_usage(int tid);
+    int thread_cpu_usage(int tid);    
+
     int cpu_count();
     
     unsigned long cpus();

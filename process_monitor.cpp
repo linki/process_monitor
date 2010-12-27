@@ -157,6 +157,8 @@ void ProcessMonitor::parse_from(FILE* stream, process_data_t* stat)
         &stat->kstkesp, &stat->kstkeip, &stat->signal, &stat->blocked, &stat->sigignore, &stat->sigcatch, &stat->wchan,
         &stat->nswap, &stat->cnswap, &stat->exit_signal, &stat->processor, &stat->rt_priority, &stat->policy,
         &stat->delayacct_blkio_ticks, &stat->guest_time, &stat->cguest_time);
+        
+    stat->total = stat->utime + stat->stime;
 }
 
 void ProcessMonitor::parse_stat_data(FILE* stream, system_data_t* stat_data)
@@ -295,6 +297,26 @@ int ProcessMonitor::process_cpu_usage()
     }
 
     return 100 * (_process_data.total - _last_process_data.total) / (_system_data.cpus.total - _last_system_data.cpus.total);
+}
+
+int ProcessMonitor::global_thread_cpu_usage(int cid)
+{
+    if (_system_data.cpus.total - _last_system_data.cpus.total == 0)
+    {
+        return 0;
+    }
+
+    return 100 * (_process_data._thread_data[cid].total - _last_process_data._thread_data[cid].total) / (_system_data.cpus.total - _last_system_data.cpus.total);
+}
+
+int ProcessMonitor::thread_cpu_usage(int cid)
+{
+    if (_process_data.total - _last_process_data.total == 0)
+    {
+        return 0;
+    }
+
+    return 100 * (_process_data._thread_data[cid].total - _last_process_data._thread_data[cid].total) / (_process_data.total - _last_process_data.total);
 }
 
 int ProcessMonitor::cpu_count()

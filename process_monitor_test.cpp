@@ -179,6 +179,7 @@ TEST(ProcessMonitor, ParseProcessStat)
     process_data_t stat_data;
     pm->parse_proc_stat(42, &stat_data);
 
+    EXPECT_EQ(7879, stat_data.total);
     EXPECT_EQ(4197, stat_data.pid);
     EXPECT_STREQ("(codeblocks)", stat_data.comm);
     EXPECT_EQ('S', stat_data.state);
@@ -232,7 +233,8 @@ TEST(ProcessMonitor, ParseProcessThreadStat)
 
     thread_data_t stat_data;
     pm->parse_thread_stat(42, 1732, &stat_data);
-               
+
+    EXPECT_EQ(3435, stat_data.total);
     EXPECT_EQ(1732, stat_data.pid);
     EXPECT_STREQ("(parsum)", stat_data.comm);
     EXPECT_EQ('R', stat_data.state);
@@ -367,6 +369,7 @@ TEST(ProcessMonitor, ComputeSystemCPUxUsage)
     pm->procfs_path("test/proc");
     pm->fetch();
 
+    // todo allocate
     pm->_system_data.cpu[0].total = 100;
     pm->_system_data.cpu[0].idle = 100;
 
@@ -400,4 +403,44 @@ TEST(ProcessMonitor, ComputeCorrectProcessCPUUsage)
     pm->_process_data.total = 180;
     
     EXPECT_EQ(80, pm->process_cpu_usage());
+}
+
+TEST(ProcessMonitor, ComputeCorrectGlobalThreadCPUUsage)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
+    pm->fetch();
+
+    // todo allocate
+    pm->_system_data.cpus.total = 100;
+    pm->_process_data._thread_data[0].total = 100;
+    
+    pm->fetch();
+
+    pm->_system_data.cpus.total = 200;
+    pm->_process_data._thread_data[0].total = 120;
+    
+    EXPECT_EQ(20, pm->global_thread_cpu_usage(0));
+}
+
+TEST(ProcessMonitor, ComputeCorrectLocalThreadCPUUsage)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
+    pm->fetch();
+
+    // todo allocate
+    pm->_system_data.cpus.total = 100;
+    pm->_process_data.total = 100;
+    pm->_process_data._thread_data[0].total = 100;
+    
+    pm->fetch();
+
+    pm->_system_data.cpus.total = 200;
+    pm->_process_data.total = 150;
+    pm->_process_data._thread_data[0].total = 125;
+    
+    // todo method name
+    EXPECT_EQ(25, pm->global_thread_cpu_usage(0));    
+    EXPECT_EQ(50, pm->thread_cpu_usage(0));
 }
