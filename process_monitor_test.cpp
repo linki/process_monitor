@@ -44,8 +44,8 @@ TEST(ProcessMonitor, ComputeCorrectProcfsPaths)
     char* process_stat_path;
     char* thread_stat_path;
     
-    pm->process_stat_path(42, &process_stat_path);
-    pm->thread_stat_path(42, 1732, &thread_stat_path);
+    pm->process_path("stat", 42, &process_stat_path);
+    pm->thread_path("stat", 42, 1732, &thread_stat_path);
     
     EXPECT_STREQ("/proc/42/stat", process_stat_path);
     EXPECT_STREQ("/proc/42/task/1732/stat", thread_stat_path);
