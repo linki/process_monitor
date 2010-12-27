@@ -275,8 +275,6 @@ int ProcessMonitor::cpu_usage()
     }
     
     return 100 - 100 * (_system_data.cpus.idle - _last_system_data.cpus.idle) / (_system_data.cpus.total - _last_system_data.cpus.total);
-
-    // return 100 * (_process_data.utime - _last_process_data.utime) / (_system_data.cpus.utime - _last_system_data.cpus.utime);
 }
 
 int ProcessMonitor::cpu_usage(int cid)
@@ -287,8 +285,16 @@ int ProcessMonitor::cpu_usage(int cid)
     }
 
     return 100 - 100 * (_system_data.cpu[cid].idle - _last_system_data.cpu[cid].idle) / (_system_data.cpu[cid].total - _last_system_data.cpu[cid].total);
+}
 
-    // return 100 * (_process_data.utime - _last_process_data.utime) / (_system_data.cpus.utime - _last_system_data.cpus.utime);
+int ProcessMonitor::process_cpu_usage()
+{
+    if (_system_data.cpus.total - _last_system_data.cpus.total == 0)
+    {
+        return 0;
+    }
+
+    return 100 * (_process_data.total - _last_process_data.total) / (_system_data.cpus.total - _last_system_data.cpus.total);
 }
 
 int ProcessMonitor::cpu_count()

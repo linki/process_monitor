@@ -122,6 +122,7 @@ TEST(ProcessMonitor, ParseSystemStatAllCPUS)
     ProcessMonitor* pm = new ProcessMonitor(42);
     pm->procfs_path("test/proc");
 
+    // allocate before
     system_data_t system_data;
     pm->parse_system_stat(&system_data);
 
@@ -390,13 +391,13 @@ TEST(ProcessMonitor, ComputeCorrectProcessCPUUsage)
     pm->procfs_path("test/proc");
     pm->fetch();
 
-    pm->_system_data.cpus.utime = 0;
-    pm->_process_data.utime = 0;
+    pm->_system_data.cpus.total = 100;
+    pm->_process_data.total = 100;
     
     pm->fetch();
 
-    pm->_system_data.cpus.utime = 100;
-    pm->_process_data.utime = 10;
+    pm->_system_data.cpus.total = 200;
+    pm->_process_data.total = 180;
     
-    //EXPECT_EQ(10, pm->process_cpu_usage());
+    EXPECT_EQ(80, pm->process_cpu_usage());
 }

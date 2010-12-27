@@ -39,9 +39,9 @@ struct process_data
     
     thread_data_t* _thread_data;
     
-    unsigned long utime;
 
-    //
+    
+    unsigned long total; // total is the sum of utime and stime
     
 
     int pid; // %d
@@ -58,7 +58,7 @@ struct process_data
     unsigned long majflt; // %lu major page faults
     unsigned long cmajflt; // %lu major faults of waited-for children
 
-    // unsigned long utime; // %lu time spent in user mode in clock ticks (divide by sysconf(_SC_CLK_TCK)), includes guest time
+    unsigned long utime; // %lu time spent in user mode in clock ticks (divide by sysconf(_SC_CLK_TCK)), includes guest time
     unsigned long stime; // %lu time spent in kernel mode in clock ticks (divide by sysconf(_SC_CLK_TCK)
     
     unsigned long cutime; // %lu time spent in user mode of waited-for children in clock ticks (divide by sysconf(_SC_CLK_TCK)), includes guest time
@@ -161,6 +161,8 @@ public:
 
     int cpu_usage();
     int cpu_usage(int cid);
+    
+    int process_cpu_usage();
 
     int cpu_count();
     
