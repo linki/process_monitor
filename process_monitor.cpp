@@ -12,7 +12,7 @@ ProcessMonitor::ProcessMonitor(int pid)
 	_pid = pid;
     _interval = 1;
     
-    _procfs_path = (char*) "/proc";
+    _procfs_path = (char*) DEFAULT_PROCFS_PATH;
     
     // todo
     _system_data.cpu_count = 0;
