@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+
 #include "process_monitor.h"
 
 int main (int argc, const char* argv[])
@@ -48,7 +49,7 @@ int main (int argc, const char* argv[])
 
     pm->stop();
 
-    exit(EXIT_SUCCESS);
+    return EXIT_SUCCESS;
 }
 
 

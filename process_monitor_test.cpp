@@ -1,5 +1,134 @@
-#include "process_monitor.h"
 #include <gtest/gtest.h>
+
+#include "process_monitor.h"
+
+#define EXPECT_SYSTEM_CPUS(container) \
+    EXPECT_EQ(4611536, container.total); \
+    EXPECT_EQ(2904, container.utime);\
+    EXPECT_EQ(0, container.nice);\
+    EXPECT_EQ(2375, container.stime);\
+    EXPECT_EQ(4606257, container.idle);\
+    EXPECT_EQ(5670, container.iowait);\
+    EXPECT_EQ(3, container.irq);\
+    EXPECT_EQ(23, container.softirq);\
+    EXPECT_EQ(0, container.steal);\
+    EXPECT_EQ(0, container.guest);
+
+#define EXPECT_SYSTEM_CPU_0(container) \
+    EXPECT_EQ(382549, container.total);\
+    EXPECT_EQ(435, container.utime);\
+    EXPECT_EQ(0, container.nice);\
+    EXPECT_EQ(253, container.stime);\
+    EXPECT_EQ(381861, container.idle);\
+    EXPECT_EQ(2228, container.iowait);\
+    EXPECT_EQ(2, container.irq);\
+    EXPECT_EQ(4, container.softirq);\
+    EXPECT_EQ(0, container.steal);\
+    EXPECT_EQ(0, container.guest);
+
+#define EXPECT_PROCESS_STAT_42(container) \
+    EXPECT_EQ(7879, container.total);\
+    EXPECT_EQ(4197, container.pid);\
+    EXPECT_STREQ("(codeblocks)", container.comm);\
+    EXPECT_EQ('S', container.state);\
+    EXPECT_EQ(1, container.ppid);\
+    EXPECT_EQ(1221, container.pgrp);\
+    EXPECT_EQ(1221, container.session);\
+    EXPECT_EQ(0, container.tty_nr);\
+    EXPECT_EQ(-1, container.tpgid);\
+    EXPECT_EQ(4202496, container.flags);\
+    EXPECT_EQ(32421, container.minflt);\
+    EXPECT_EQ(25985, container.cminflt);\
+    EXPECT_EQ(0, container.majflt);\
+    EXPECT_EQ(0, container.cmajflt);\
+    EXPECT_EQ(5959, container.utime);\
+    EXPECT_EQ(1920, container.stime);\
+    EXPECT_EQ(8, container.cutime);\
+    EXPECT_EQ(7, container.cstime);\
+    EXPECT_EQ(20, container.priority);\
+    EXPECT_EQ(0, container.nice);\
+    EXPECT_EQ(7, container.num_threads);\
+    EXPECT_EQ(0, container.itrealvalue);\
+    EXPECT_EQ(2146751, container.starttime);\
+    EXPECT_EQ(476565504, container.vsize);\
+    EXPECT_EQ(16921, container.rss);\
+    EXPECT_EQ(18446744073709551615ul, container.rsslim);\
+    EXPECT_EQ(4194304, container.startcode);\
+    EXPECT_EQ(4855908, container.endcode);\
+    EXPECT_EQ(140736585266400, container.startstack);\
+    EXPECT_EQ(140736585265520, container.kstkesp);\
+    EXPECT_EQ(140702147826179, container.kstkeip);\
+    EXPECT_EQ(0, container.signal);\
+    EXPECT_EQ(0, container.blocked);\
+    EXPECT_EQ(4096, container.sigignore);\
+    EXPECT_EQ(1224, container.sigcatch);\
+    EXPECT_EQ(18446744073709551615ul, container.wchan);\
+    EXPECT_EQ(0, container.nswap);\
+    EXPECT_EQ(0, container.cnswap);\
+    EXPECT_EQ(17, container.exit_signal);\
+    EXPECT_EQ(0, container.processor);\
+    EXPECT_EQ(0, container.rt_priority);\
+    EXPECT_EQ(0, container.policy);\
+    EXPECT_EQ(4, container.delayacct_blkio_ticks);\
+    EXPECT_EQ(0, container.guest_time);\
+    EXPECT_EQ(0, container.cguest_time);
+
+#define EXPECT_THREAD_STAT_1732(container) \
+    EXPECT_EQ(3435, container.total); \
+    EXPECT_EQ(1732, container.pid); \
+    EXPECT_STREQ("(parsum)", container.comm); \
+    EXPECT_EQ('R', container.state); \
+    EXPECT_EQ(1629, container.ppid); \
+    EXPECT_EQ(1729, container.pgrp); \
+    EXPECT_EQ(1629, container.session); \
+    EXPECT_EQ(34817, container.tty_nr); \
+    EXPECT_EQ(1629, container.tpgid); \
+    EXPECT_EQ(4202560, container.flags); \
+    EXPECT_EQ(0, container.minflt); \
+    EXPECT_EQ(0, container.cminflt); \
+    EXPECT_EQ(0, container.majflt); \
+    EXPECT_EQ(0, container.cmajflt); \
+    EXPECT_EQ(3403, container.utime); \
+    EXPECT_EQ(32, container.stime); \
+    EXPECT_EQ(0, container.cutime); \
+    EXPECT_EQ(0, container.cstime); \
+    EXPECT_EQ(20, container.priority); \
+    EXPECT_EQ(0, container.nice); \
+    EXPECT_EQ(4, container.num_threads); \
+    EXPECT_EQ(0, container.itrealvalue); \
+    EXPECT_EQ(34360, container.starttime); \
+    EXPECT_EQ(31535104, container.vsize); \
+    EXPECT_EQ(86, container.rss); \
+    EXPECT_EQ(18446744073709551615ul, container.rsslim); \
+    EXPECT_EQ(4194304, container.startcode); \
+    EXPECT_EQ(4198948, container.endcode); \
+    EXPECT_EQ(140735433694176, container.startstack); \
+    EXPECT_EQ(139673639001792, container.kstkesp); \
+    EXPECT_EQ(4196521, container.kstkeip); \
+    EXPECT_EQ(0, container.signal); \
+    EXPECT_EQ(0, container.blocked); \
+    EXPECT_EQ(0, container.sigignore); \
+    EXPECT_EQ(0, container.sigcatch); \
+    EXPECT_EQ(0, container.wchan); \
+    EXPECT_EQ(0, container.nswap); \
+    EXPECT_EQ(0, container.cnswap); \
+    EXPECT_EQ(-1, container.exit_signal); \
+    EXPECT_EQ(0, container.processor); \
+    EXPECT_EQ(0, container.rt_priority); \
+    EXPECT_EQ(0, container.policy); \
+    EXPECT_EQ(0, container.delayacct_blkio_ticks); \
+    EXPECT_EQ(0, container.guest_time); \
+    EXPECT_EQ(0, container.cguest_time);
+    
+#define EXPECT_PROCESS_STATM_42(container) \
+    EXPECT_EQ(3543, container.size); \
+    EXPECT_EQ(125, container.resident); \
+    EXPECT_EQ(99, container.share); \
+    EXPECT_EQ(2, container.text); \
+    EXPECT_EQ(0, container.lib); \
+    EXPECT_EQ(2117, container.data); \
+    EXPECT_EQ(0, container.dt);
+
 
 TEST(ProcessMonitor, Initialization)
 {
@@ -22,8 +151,6 @@ TEST(ProcessMonitor, FetchUpdatesTheData)
     ProcessMonitor* pm = new ProcessMonitor(42);
     pm->procfs_path("test/proc");
 
-    // EXPECT_EQ(0, pm->_process_data.utime);
-
     pm->fetch();
 
     // peek
@@ -41,15 +168,19 @@ TEST(ProcessMonitor, ComputeCorrectProcfsPaths)
     ProcessMonitor* pm = new ProcessMonitor(42);
     pm->procfs_path("/proc");
     
+    char* system_stat_path;
     char* process_stat_path;
     char* thread_stat_path;
     
-    pm->process_path("stat", 42, &process_stat_path);
-    pm->thread_path("stat", 42, 1732, &thread_stat_path);
+    pm->get_path("stat", &system_stat_path);
+    pm->get_path(42, "stat", &process_stat_path);
+    pm->get_path(42, 1732, "stat", &thread_stat_path);
     
+    EXPECT_STREQ("/proc/stat", system_stat_path);
     EXPECT_STREQ("/proc/42/stat", process_stat_path);
     EXPECT_STREQ("/proc/42/task/1732/stat", thread_stat_path);
     
+    free(system_stat_path);
     free(process_stat_path);
     free(thread_stat_path);
 }
@@ -129,28 +260,9 @@ TEST(ProcessMonitor, ParseSystemStatAllCPUS)
     system_data_t system_data;
     pm->parse_system_stat(&system_data);
 
-    EXPECT_EQ(4611536, system_data.cpus.total);
-    EXPECT_EQ(2904, system_data.cpus.utime);
-    EXPECT_EQ(0, system_data.cpus.nice);
-    EXPECT_EQ(2375, system_data.cpus.stime);
-    EXPECT_EQ(4606257, system_data.cpus.idle);
-    EXPECT_EQ(5670, system_data.cpus.iowait);
-    EXPECT_EQ(3, system_data.cpus.irq);
-    EXPECT_EQ(23, system_data.cpus.softirq);
-    EXPECT_EQ(0, system_data.cpus.steal);
-    EXPECT_EQ(0, system_data.cpus.guest);
+    EXPECT_SYSTEM_CPUS(system_data.cpus);
+    EXPECT_SYSTEM_CPU_0(system_data.cpu[0]);
 
-    EXPECT_EQ(382549, system_data.cpu[0].total);
-    EXPECT_EQ(435, system_data.cpu[0].utime);
-    EXPECT_EQ(0, system_data.cpu[0].nice);
-    EXPECT_EQ(253, system_data.cpu[0].stime);
-    EXPECT_EQ(381861, system_data.cpu[0].idle);
-    EXPECT_EQ(2228, system_data.cpu[0].iowait);
-    EXPECT_EQ(2, system_data.cpu[0].irq);
-    EXPECT_EQ(4, system_data.cpu[0].softirq);
-    EXPECT_EQ(0, system_data.cpu[0].steal);
-    EXPECT_EQ(0, system_data.cpu[0].guest);
-    
     EXPECT_EQ(384465, system_data.cpu[5].total);    
     EXPECT_EQ(100, system_data.cpu[5].utime);
     EXPECT_EQ(0, system_data.cpu[5].nice);
@@ -180,53 +292,9 @@ TEST(ProcessMonitor, ParseProcessStat)
     pm->procfs_path("test/proc");
 
     process_data_t stat_data;
-    pm->parse_proc_stat(42, &stat_data);
-
-    EXPECT_EQ(7879, stat_data.total);
-    EXPECT_EQ(4197, stat_data.pid);
-    EXPECT_STREQ("(codeblocks)", stat_data.comm);
-    EXPECT_EQ('S', stat_data.state);
-    EXPECT_EQ(1, stat_data.ppid);
-    EXPECT_EQ(1221, stat_data.pgrp);
-    EXPECT_EQ(1221, stat_data.session);
-    EXPECT_EQ(0, stat_data.tty_nr);
-    EXPECT_EQ(-1, stat_data.tpgid);
-    EXPECT_EQ(4202496, stat_data.flags);
-    EXPECT_EQ(32421, stat_data.minflt);
-    EXPECT_EQ(25985, stat_data.cminflt);
-    EXPECT_EQ(0, stat_data.majflt);
-    EXPECT_EQ(0, stat_data.cmajflt);
-    EXPECT_EQ(5959, stat_data.utime);
-    EXPECT_EQ(1920, stat_data.stime);
-    EXPECT_EQ(8, stat_data.cutime);
-    EXPECT_EQ(7, stat_data.cstime);
-    EXPECT_EQ(20, stat_data.priority);
-    EXPECT_EQ(0, stat_data.nice);
-    EXPECT_EQ(7, stat_data.num_threads);
-    EXPECT_EQ(0, stat_data.itrealvalue);
-    EXPECT_EQ(2146751, stat_data.starttime);
-    EXPECT_EQ(476565504, stat_data.vsize);
-    EXPECT_EQ(16921, stat_data.rss);
-    EXPECT_EQ(18446744073709551615ul, stat_data.rsslim);
-    EXPECT_EQ(4194304, stat_data.startcode);
-    EXPECT_EQ(4855908, stat_data.endcode);
-    EXPECT_EQ(140736585266400, stat_data.startstack);
-    EXPECT_EQ(140736585265520, stat_data.kstkesp);
-    EXPECT_EQ(140702147826179, stat_data.kstkeip);
-    EXPECT_EQ(0, stat_data.signal);
-    EXPECT_EQ(0, stat_data.blocked);
-    EXPECT_EQ(4096, stat_data.sigignore);
-    EXPECT_EQ(1224, stat_data.sigcatch);
-    EXPECT_EQ(18446744073709551615ul, stat_data.wchan);
-    EXPECT_EQ(0, stat_data.nswap);
-    EXPECT_EQ(0, stat_data.cnswap);
-    EXPECT_EQ(17, stat_data.exit_signal);
-    EXPECT_EQ(0, stat_data.processor);
-    EXPECT_EQ(0, stat_data.rt_priority);
-    EXPECT_EQ(0, stat_data.policy);
-    EXPECT_EQ(4, stat_data.delayacct_blkio_ticks);
-    EXPECT_EQ(0, stat_data.guest_time);
-    EXPECT_EQ(0, stat_data.cguest_time);
+    pm->parse_process_stat_file(42, &stat_data);
+    
+    EXPECT_PROCESS_STAT_42(stat_data);
 }
 
 TEST(ProcessMonitor, ParseProcessThreadStat)
@@ -235,53 +303,9 @@ TEST(ProcessMonitor, ParseProcessThreadStat)
     pm->procfs_path("test/proc");
 
     thread_data_t stat_data;
-    pm->parse_thread_stat(42, 1732, &stat_data);
-
-    EXPECT_EQ(3435, stat_data.total);
-    EXPECT_EQ(1732, stat_data.pid);
-    EXPECT_STREQ("(parsum)", stat_data.comm);
-    EXPECT_EQ('R', stat_data.state);
-    EXPECT_EQ(1629, stat_data.ppid);
-    EXPECT_EQ(1729, stat_data.pgrp);
-    EXPECT_EQ(1629, stat_data.session);
-    EXPECT_EQ(34817, stat_data.tty_nr);
-    EXPECT_EQ(1629, stat_data.tpgid);
-    EXPECT_EQ(4202560, stat_data.flags);
-    EXPECT_EQ(0, stat_data.minflt);
-    EXPECT_EQ(0, stat_data.cminflt);
-    EXPECT_EQ(0, stat_data.majflt);
-    EXPECT_EQ(0, stat_data.cmajflt);
-    EXPECT_EQ(3403, stat_data.utime);
-    EXPECT_EQ(32, stat_data.stime);
-    EXPECT_EQ(0, stat_data.cutime);
-    EXPECT_EQ(0, stat_data.cstime);
-    EXPECT_EQ(20, stat_data.priority);
-    EXPECT_EQ(0, stat_data.nice);
-    EXPECT_EQ(4, stat_data.num_threads);
-    EXPECT_EQ(0, stat_data.itrealvalue);
-    EXPECT_EQ(34360, stat_data.starttime);
-    EXPECT_EQ(31535104, stat_data.vsize);
-    EXPECT_EQ(86, stat_data.rss);
-    EXPECT_EQ(18446744073709551615ul, stat_data.rsslim);
-    EXPECT_EQ(4194304, stat_data.startcode);
-    EXPECT_EQ(4198948, stat_data.endcode);
-    EXPECT_EQ(140735433694176, stat_data.startstack);
-    EXPECT_EQ(139673639001792, stat_data.kstkesp);
-    EXPECT_EQ(4196521, stat_data.kstkeip);
-    EXPECT_EQ(0, stat_data.signal);
-    EXPECT_EQ(0, stat_data.blocked);
-    EXPECT_EQ(0, stat_data.sigignore);
-    EXPECT_EQ(0, stat_data.sigcatch);
-    EXPECT_EQ(0, stat_data.wchan);
-    EXPECT_EQ(0, stat_data.nswap);
-    EXPECT_EQ(0, stat_data.cnswap);
-    EXPECT_EQ(-1, stat_data.exit_signal);
-    EXPECT_EQ(0, stat_data.processor);
-    EXPECT_EQ(0, stat_data.rt_priority);
-    EXPECT_EQ(0, stat_data.policy);
-    EXPECT_EQ(0, stat_data.delayacct_blkio_ticks);
-    EXPECT_EQ(0, stat_data.guest_time);
-    EXPECT_EQ(0, stat_data.cguest_time);
+    pm->parse_thread_stat_file(42, 1732, &stat_data);
+    
+    EXPECT_THREAD_STAT_1732(stat_data);
 }
 
 // measured in pages
@@ -291,15 +315,9 @@ TEST(ProcessMonitor, ParseProcessStatm)
     pm->procfs_path("test/proc");
 
     process_datam_t data;
-    pm->parse_process_statm(42, &data);
-          
-    EXPECT_EQ(3543, data.size);
-    EXPECT_EQ(125, data.resident);
-    EXPECT_EQ(99, data.share);
-    EXPECT_EQ(2, data.text);
-    EXPECT_EQ(0, data.lib);
-    EXPECT_EQ(2117, data.data);
-    EXPECT_EQ(0, data.dt);
+    pm->parse_process_statm_file(42, &data);
+        
+    EXPECT_PROCESS_STATM_42(data);
 }
 
 TEST(ProcessMonitor, ParseSystemMeminfo)
@@ -453,4 +471,79 @@ TEST(ProcessMonitor, ComputeCorrectLocalThreadCPUUsage)
     // todo method name
     EXPECT_EQ(25, pm->global_thread_cpu_usage(0));    
     EXPECT_EQ(50, pm->thread_cpu_usage(0));
+}
+
+TEST(ProcessMonitor, CopySystemdata)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
+    
+    system_data_t src_data;
+    pm->parse_system_stat(&src_data);
+
+    EXPECT_EQ(2904, src_data.cpus.utime);
+    EXPECT_EQ(435, src_data.cpu[0].utime);  
+    EXPECT_EQ(100, src_data.cpu[5].utime);   
+    EXPECT_EQ(25, src_data.cpu[11].utime);
+
+    system_data_t dest_data;
+    
+    pm->copy_system_data(&dest_data, &src_data);
+
+    src_data.cpus.utime = 0;
+    src_data.cpu[0].utime = 0;
+    src_data.cpu[5].utime = 0;
+    src_data.cpu[11].utime = 0;        
+
+    EXPECT_EQ(2904, dest_data.cpus.utime);
+    EXPECT_EQ(435, dest_data.cpu[0].utime);  
+    EXPECT_EQ(100, dest_data.cpu[5].utime);   
+    EXPECT_EQ(25, dest_data.cpu[11].utime);
+}
+
+// todo less dependencies to fetch
+TEST(ProcessMonitor, CopyProcessdata)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
+    
+    pm->fetch();
+
+    // peek
+    EXPECT_EQ(5959, pm->_process_data.utime);
+    EXPECT_EQ(400, pm->_process_data._thread_data[0].utime);    
+    EXPECT_EQ(4133, pm->_process_data._thread_data[1].utime);    
+    EXPECT_EQ(3157, pm->_process_data._thread_data[2].utime);
+    EXPECT_EQ(3403, pm->_process_data._thread_data[3].utime);    
+    
+    process_data_t dest_data;
+    
+    pm->copy_process_data(&dest_data, &pm->_process_data);
+
+    pm->_process_data.utime = 0;
+    pm->_process_data._thread_data[0].utime = 0;
+    pm->_process_data._thread_data[1].utime = 0;
+    pm->_process_data._thread_data[2].utime = 0;
+    pm->_process_data._thread_data[3].utime = 0;    
+
+    EXPECT_EQ(5959, dest_data.utime);
+    EXPECT_EQ(400, dest_data._thread_data[0].utime);  
+    EXPECT_EQ(4133, dest_data._thread_data[1].utime);   
+    EXPECT_EQ(3157, dest_data._thread_data[2].utime);
+    EXPECT_EQ(3403, dest_data._thread_data[3].utime);    
+}
+
+TEST(ProcessMonitor, ParseProcessDataWithThreadsAndMemory)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
+
+    process_data_t stat_data;
+    pm->parse_process(42, &stat_data);
+    
+    EXPECT_PROCESS_STAT_42(stat_data);
+    
+    EXPECT_THREAD_STAT_1732(stat_data._thread_data[3]);
+    
+    EXPECT_PROCESS_STATM_42(stat_data._memory);
 }

@@ -60,6 +60,8 @@ struct process_data
     
     thread_data_t* _thread_data;
     
+    process_datam_t _memory;
+    
 
     
     unsigned long total; // total is the sum of utime and stime
@@ -152,17 +154,19 @@ public:
     
     // methods
     void fetch();
-    void parse_proc_stat(int pid, process_data_t* stat);
-    void parse_thread_stat(int pid, int tid, thread_data_t* stat);
+    void parse_process(int pid, process_data_t* process_data);    
+    
+    void parse_process_stat_file(int pid, process_data_t* stat);
+    void parse_thread_stat_file(int pid, int tid, thread_data_t* stat);
     void parse_system_stat(system_data_t* system_data);
-
-    void parse_process_statm(int pid, process_datam_t* data);
+    
+    void parse_process_statm_file(int pid, process_datam_t* data);
     void parse_meminfo(meminfo_t* data);
             
-    void parse_from(FILE* stream, process_data_t* stat);
+    void parse_thread_stat_stream(FILE* stream, process_data_t* stat);
     void parse_stat_data(FILE* stream, system_data_t* stat_data);
 
-    void parse_statm_data(FILE* stream, process_datam_t* data);
+    void parse_process_statm_stream(FILE* stream, process_datam_t* data);
     void parse_meminfo_data(FILE* stream, meminfo_t* data);    
     void parse_cpu_count_data(FILE* stream, system_data_t* stat_data);
     
@@ -179,8 +183,9 @@ public:
     void stop();
 
     // extended accessors
-    char* process_path(const char* name, int pid, char** path);
-    char* thread_path(const char* name, int pid, int tid, char** path);    
+    char* get_path(const char* name, char** path);
+    char* get_path(int pid, const char* name, char** path);
+    char* get_path(int pid, int tid, const char* name, char** path);    
 
     // accessors
     int pid();
@@ -210,4 +215,10 @@ public:
     
     unsigned long mem_total();
     unsigned long mem_free();
+    
+    void copy_system_data(system_data_t* dest_data, system_data_t* src_data);
+    void copy_process_data(process_data_t* dest_data, process_data_t* src_data);    
+
+
+
 };
