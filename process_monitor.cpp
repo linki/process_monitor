@@ -16,6 +16,7 @@ ProcessMonitor::ProcessMonitor(int pid)
     
     // todo
     _system_data.cpu_count = 0;
+    _process_data._threads = 0;
 }
 
 void* ProcessMonitor::run(void* data)
