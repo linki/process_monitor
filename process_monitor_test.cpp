@@ -284,6 +284,7 @@ TEST(ProcessMonitor, ParseProcessThreadStat)
     EXPECT_EQ(0, stat_data.cguest_time);
 }
 
+// measured in pages
 TEST(ProcessMonitor, ParseProcessStatm)
 {
     ProcessMonitor* pm = new ProcessMonitor(42);
