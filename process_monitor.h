@@ -3,6 +3,14 @@
 
 #define DEFAULT_PROCFS_PATH "/proc"
 
+struct meminfo
+{
+    unsigned long long total; // MemTotal in kB
+    unsigned long long free; // MemFree in kB
+};
+
+typedef struct meminfo meminfo_t;
+
 struct process_datam
 {
     unsigned long long size; // total program size
@@ -136,6 +144,8 @@ public:
 
     process_data_t _process_data;
     process_data_t _last_process_data;
+    
+    meminfo_t _memory_data;
 
     // constructors
     explicit ProcessMonitor(int pid);
@@ -147,11 +157,13 @@ public:
     void parse_system_stat(system_data_t* system_data);
 
     void parse_process_statm(int pid, process_datam_t* data);
-        
+    void parse_meminfo(meminfo_t* data);
+            
     void parse_from(FILE* stream, process_data_t* stat);
     void parse_stat_data(FILE* stream, system_data_t* stat_data);
 
     void parse_statm_data(FILE* stream, process_datam_t* data);
+    void parse_meminfo_data(FILE* stream, meminfo_t* data);    
     void parse_cpu_count_data(FILE* stream, system_data_t* stat_data);
     
     void parse(const char* stream);
@@ -196,4 +208,6 @@ public:
     
     char state();
     
+    unsigned long mem_total();
+    unsigned long mem_free();
 };

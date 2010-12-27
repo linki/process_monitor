@@ -105,6 +105,8 @@ void ProcessMonitor::fetch()
     }
     
     parse_system_stat(&_system_data);    
+    
+    parse_meminfo(&_memory_data);
 }
 
 void ProcessMonitor::parse_proc_stat(int pid, process_data_t* stat)
@@ -158,6 +160,16 @@ void ProcessMonitor::parse_process_statm(int pid, process_datam_t* data)
     
 }
 
+void ProcessMonitor::parse_meminfo(meminfo_t* data)
+{
+    char filename[128]; //todo
+    snprintf(filename, 128, "%s/meminfo", _procfs_path);
+    
+    FILE* stream = fopen(filename, "r");
+    parse_meminfo_data(stream, data);
+    fclose(stream);    
+}
+    
 void ProcessMonitor::parse_from(FILE* stream, process_data_t* stat)
 {
     fscanf(stream, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %llu %lu %ld %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %d %d %u %u %llu %lu %ld",
@@ -198,6 +210,22 @@ void ProcessMonitor::parse_statm_data(FILE* stream, process_datam_t* data)
 {
     fscanf(stream, "%llu %llu %llu %llu %llu %llu %llu\n",
         &data->size, &data->resident, &data->share, &data->text, &data->lib, &data->data, &data->dt);    
+}
+
+void ProcessMonitor::parse_meminfo_data(FILE* stream, meminfo_t* data)
+{
+    fscanf(stream, "MemTotal: %llu kB\n   \
+                    MemFree: %llu kB\n",
+                    &data->total,
+                    &data->free);    
+    
+   // char line[64];
+   // while (!feof(stream))
+   // {
+   //     fgets(line, 64, stream);
+   //     sscanf(line, "MemTotal: %llu kB\n", &data->total);
+   //     sscanf(line, "MemFree: %llu kB\n", &data->free);
+   // }
 }
     
 void ProcessMonitor::parse_cpu_count_data(FILE* stream, system_data_t* stat_data)
@@ -390,4 +418,14 @@ unsigned long ProcessMonitor::utime(int tid)
 char ProcessMonitor::state()
 {
     return _process_data.state;
+}
+
+unsigned long ProcessMonitor::mem_total()
+{
+    return _memory_data.total;
+}
+
+unsigned long ProcessMonitor::mem_free()
+{
+    return _memory_data.free;
 }

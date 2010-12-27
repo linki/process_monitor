@@ -104,6 +104,9 @@ TEST(ProcessMonitor, GetAttributes)
     EXPECT_EQ(3403, pm->utime(3));
     
     EXPECT_EQ('S', pm->state());
+    
+    EXPECT_EQ(49550504, pm->mem_total());
+    EXPECT_EQ(47442424, pm->mem_free());
 }
 
 TEST(ProcessMonitor, ParseCPUCount)
@@ -298,27 +301,16 @@ TEST(ProcessMonitor, ParseProcessStatm)
     EXPECT_EQ(0, data.dt);
 }
 
-TEST(ProcessMonitor, ParseSystemStatm)
+TEST(ProcessMonitor, ParseSystemMeminfo)
 {
-    const char* stream = "119626 18050 6660 162 0 43782 0\n";
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
 
-    unsigned long long size; // total program size
-    unsigned long long resident; // resident set size
-    unsigned long long share; // shared pages (from shared mappings)
-    unsigned long long text; // text (code)
-    unsigned long long lib; // library (unused in Linux 2.6)
-    unsigned long long data; // data + stack
-    unsigned long long dt; // dirty pages (unused in Linux 2.6)
-
-    sscanf(stream, "%llu %llu %llu %llu %llu %llu %llu", &size, &resident, &share, &text, &lib, &data, &dt);
-
-    EXPECT_EQ(119626, size);
-    EXPECT_EQ(18050, resident);
-    EXPECT_EQ(6660, share);
-    EXPECT_EQ(162, text);
-    EXPECT_EQ(0, lib);
-    EXPECT_EQ(43782, data);
-    EXPECT_EQ(0, dt);
+    meminfo_t data;
+    pm->parse_meminfo(&data);
+          
+    EXPECT_EQ(49550504, data.total); // kb
+    EXPECT_EQ(47442424, data.free); //kb
 }
 
 TEST(ProcessMonitor, ParseLoadAvg)
