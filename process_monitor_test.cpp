@@ -294,6 +294,9 @@
     EXPECT_EQ(2117, container.data); \
     EXPECT_EQ(0, container.dt);
 
+#define EXPECT_PROCESS_STATUS_42(container) \
+    EXPECT_EQ(1592900, container.vm_size); \
+    EXPECT_EQ(1111020, container.vm_rss);
 
 TEST(ProcessMonitor, Initialization)
 {
@@ -326,6 +329,8 @@ TEST(ProcessMonitor, FetchUpdatesTheData)
     EXPECT_THREAD_STAT_1732(pm->_process_data._thread_data[3]);
     
     EXPECT_PROCESS_STATM_42(pm->_process_data._memory_data);
+    
+    EXPECT_PROCESS_STATUS_42(pm->_process_data._memory_data2);
 }
 
 TEST(ProcessMonitor, ComputeCorrectProcfsPaths)
@@ -431,6 +436,17 @@ TEST(ProcessMonitor, ParseProcessStatm)
     EXPECT_PROCESS_STATM_42(data);
 }
 
+TEST(ProcessMonitor, ParseProcessStatus)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
+
+    process_status_t data;
+    pm->parse_process_status_file(42, &data);
+        
+    EXPECT_PROCESS_STATUS_42(data);
+}
+
 TEST(ProcessMonitor, ParseSystemMeminfo)
 {
     ProcessMonitor* pm = new ProcessMonitor(42);
@@ -443,7 +459,6 @@ TEST(ProcessMonitor, ParseSystemMeminfo)
     EXPECT_EQ(47442424, data.free); //kb
     EXPECT_EQ( 2108080, data.used); //kb
 
-    // maybe
     // VmRSS / MemTotal = Memory Usage laut top
 }
 
@@ -567,7 +582,25 @@ TEST(ProcessMonitor, ComputeCorrectLocalThreadCPUUsage)
     EXPECT_EQ(50, pm->thread_cpu_usage(0));
 }
 
+TEST(ProcessMonitor, ComputeCorrectMemoryUsage)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
+    // todo allocate
+    // size of process divided by total for now
+    pm->_system_data._memory_data.total = 200;
+    pm->_process_data._memory_data2.vm_rss = 50;    
+    
+    EXPECT_EQ(25, pm->mem_usage());
 
+    pm->fetch();
+    
+    EXPECT_EQ(2, pm->mem_usage());
+    
+  //  VmRSS:	 1111020 kB
+    
+//    1111020/49550504
+}
 
 
 TEST(ProcessMonitor, ParseSystemData)
@@ -577,8 +610,9 @@ TEST(ProcessMonitor, ParseSystemData)
 
     // allocate before
     system_data_t system_data;
-    // todo
-    system_data.cpu_count = 0;
+    
+    ProcessMonitor::__system_data_init(&system_data);
+
     pm->parse_system_stat_file(&system_data);
 
     EXPECT_SYSTEM_CPUS(system_data.cpus);

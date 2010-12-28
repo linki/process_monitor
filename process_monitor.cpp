@@ -89,6 +89,7 @@ void ProcessMonitor::parse_process(int pid, process_data_t* process_data)
     parse_process_stat_file(pid, process_data);
     process_data->_thread_count = parse_threads(pid, &process_data->_thread_data);
     parse_process_statm_file(pid, &process_data->_memory_data);
+    parse_process_status_file(pid, &process_data->_memory_data2);
 }
 
 int ProcessMonitor::parse_threads(int pid, thread_data_t** thread_data)
@@ -156,6 +157,26 @@ void ProcessMonitor::parse_process_statm_stream(FILE* stream, process_datam_t* d
     fscanf(stream, "%llu %llu %llu %llu %llu %llu %llu\n",
         &data->size, &data->resident, &data->share, &data->text,
         &data->lib, &data->data, &data->dt);    
+}
+
+void ProcessMonitor::parse_process_status_file(int pid, process_status_t* data)
+{
+    FILE* stream;
+    open_file(pid, "status", &stream);
+    parse_process_status_stream(stream, data);
+    fclose(stream);
+}
+
+void ProcessMonitor::parse_process_status_stream(FILE* stream, process_status_t* data)
+{
+    // todo
+    char line[64];
+    while (!feof(stream))
+    {
+        fgets(line, 64, stream);
+        sscanf(line, "VmSize: %llu kB\n", &data->vm_size);
+        sscanf(line, "VmRSS: %llu kB\n", &data->vm_rss);
+    }
 }
 
 void ProcessMonitor::parse_system_stat_file(system_data_t* stat)
@@ -418,6 +439,11 @@ unsigned long ProcessMonitor::mem_total()
 unsigned long ProcessMonitor::mem_free()
 {
     return _system_data._memory_data.free;
+}
+
+int ProcessMonitor::mem_usage()
+{
+    return 100 * _process_data._memory_data2.vm_rss / _system_data._memory_data.total;
 }
 
 void ProcessMonitor::copy_system_data(system_data_t* dest_data, system_data_t* src_data)

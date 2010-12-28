@@ -3,8 +3,17 @@
 
 #define DEFAULT_PROCFS_PATH "/proc"
 
+// todo change name
+struct process_status_t
+{
+    // in kbytes
+    unsigned long long vm_size; // VmSize: Virtual memory size
+    unsigned long long vm_rss; // Resident set size.
+};
+
 struct meminfo
 {
+    // in kbytes
     unsigned long long total; // MemTotal in kB
     unsigned long long free; // MemFree in kB
     unsigned long long used; // MemTotal - MemFree in kB
@@ -14,6 +23,7 @@ typedef struct meminfo meminfo_t;
 
 struct process_datam
 {
+    // in pages (4kb/page)
     unsigned long long size; // total program size
     unsigned long long resident; // resident set size
     unsigned long long share; // shared pages (from shared mappings)
@@ -64,6 +74,7 @@ struct process_data
     thread_data_t* _thread_data;
     
     process_datam_t _memory_data;
+    process_status_t _memory_data2;
     
 
     
@@ -161,12 +172,14 @@ public:
     void parse_system_stat_file(system_data_t* system_data);
     
     void parse_process_statm_file(int pid, process_datam_t* data);
+    void parse_process_status_file(int pid, process_status_t* data);
     void parse_meminfo_file(meminfo_t* data);
             
     void parse_process_stat_stream(FILE* stream, process_data_t* stat);
+    void parse_process_statm_stream(FILE* stream, process_datam_t* data);
+    void parse_process_status_stream(FILE* stream, process_status_t* data);
     void parse_system_stat_stream(FILE* stream, system_data_t* stat_data);
 
-    void parse_process_statm_stream(FILE* stream, process_datam_t* data);
     void parse_meminfo_stream(FILE* stream, meminfo_t* data);    
     int parse_system_stat_stream_for_cpu_count(FILE* stream);
     
@@ -215,9 +228,68 @@ public:
     unsigned long mem_total();
     unsigned long mem_free();
     
+    int mem_usage();
+    
     void copy_system_data(system_data_t* dest_data, system_data_t* src_data);
     void copy_process_data(process_data_t* dest_data, process_data_t* src_data);    
 
     static void __process_data_init(process_data_t* process_data);
     static void __system_data_init(system_data_t* system_data);
 };
+
+/*
+The fields are as follows:
+
+             * Name: Command run by this process.
+
+             * State: Current state of the process.  One of "R (running)", "S (sleeping)", "D (disk sleep)", "T (stopped)", "T (tracing stop)",  "Z  (zombie)",
+               or "X (dead)".
+
+             * Tgid: Thread group ID (i.e., Process ID).
+
+             * Pid: Thread ID (see gettid(2)).
+
+             * TracerPid: PID of process tracing this process (0 if not being traced).
+
+             * Uid, Gid: Real, effective, saved set, and file system UIDs (GIDs).
+
+             * FDSize: Number of file descriptor slots currently allocated.
+             * FDSize: Number of file descriptor slots currently allocated.
+
+                           * Groups: Supplementary group list.
+
+                           * VmPeak: Peak virtual memory size.
+
+                           * VmSize: Virtual memory size.
+
+                           * VmLck: Locked memory size.
+
+                           * VmHWM: Peak resident set size ("high water mark").
+
+                           * VmRSS: Resident set size.
+
+                           * VmData, VmStk, VmExe: Size of data, stack, and text segments.
+
+                           * VmLib: Shared library code size.
+
+                           * VmPTE: Page table entries size (since Linux 2.6.10).
+
+                           * Threads: Number of threads in process containing this thread.
+                           * SigPnd, ShdPnd: Number of signals pending for thread and for process as a whole (see pthreads(7) and signal(7)).
+
+                                         * SigBlk, SigIgn, SigCgt: Masks indicating signals being blocked, ignored, and caught (see signal(7)).
+
+                                         * CapInh, CapPrm, CapEff: Masks of capabilities enabled in inheritable, permitted, and effective sets (see capabilities(7)).
+
+                                         * CapBnd: Capability Bounding set (since kernel 2.6.26, see capabilities(7)).
+
+                                         * Cpus_allowed: Mask of CPUs on which this process may run (since Linux 2.6.24, see cpuset(7)).
+
+                                         * Cpus_allowed_list: Same as previous, but in "list format" (since Linux 2.6.26, see cpuset(7)).
+
+                                         * Mems_allowed: Mask of memory nodes allowed to this process (since Linux 2.6.24, see cpuset(7)).
+
+                                         * Mems_allowed_list: Same as previous, but in "list format" (since Linux 2.6.26, see cpuset(7)).
+
+                                         * voluntary_context_switches, nonvoluntary_context_switches: Number of voluntary and involuntary context switches (since Linux 2.6.23).
+*/
