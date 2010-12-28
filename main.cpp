@@ -27,19 +27,19 @@ int main (int argc, const char* argv[])
 
     while (1)
     {
-        printf("s: %c p: %d ", pm->state(), pm->process_cpu_usage());
-        
-        for (int i = 0; i < pm->threads(); ++i)
-        {
-            printf("s%d: %c g%d: %d l%d: %d ", i, pm->state(), i, pm->global_thread_cpu_usage(i), i, pm->thread_cpu_usage(i));
-        }
-        
-        // printf("a: %d", pm->cpu_usage());
+        // printf("s: %c p: %d ", pm->state(), pm->process_cpu_usage());
         // 
-        // for (int i = 0; i < pm->cpu_count(); ++i)
+        // for (int i = 0; i < pm->threads(); ++i)
         // {
-        //     printf(" c%d: %d", i, pm->cpu_usage(i));
+        //     printf("s%d: %c g%d: %d l%d: %d ", i, pm->state(), i, pm->global_thread_cpu_usage(i), i, pm->thread_cpu_usage(i));
         // }
+        
+        printf("a: %d", pm->cpu_usage());
+        
+        for (int i = 0; i < pm->cpu_count(); ++i)
+        {
+            printf(" c%d: %d", i, pm->cpu_usage(i));
+        }
 	    
 	    
         printf("\n");
