@@ -17,7 +17,7 @@ ProcessMonitor::ProcessMonitor(int pid)
     __process_data_init(&_process_data);
 }
 
-void* ProcessMonitor::run(void* data)
+void* ProcessMonitor::run(void* instance)
 {
 	/* enable canceling of thread */
 	pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, NULL);
@@ -25,7 +25,7 @@ void* ProcessMonitor::run(void* data)
 	/* enable immediate cancelation */
 	pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, NULL);
 
-    ProcessMonitor* pm = (ProcessMonitor*) data;
+    ProcessMonitor* pm = (ProcessMonitor*) instance;
 
     while (true)
     {
