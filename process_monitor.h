@@ -167,7 +167,7 @@ public:
     void parse_system_stat_stream(FILE* stream, system_data_t* stat_data);
 
     void parse_process_statm_stream(FILE* stream, process_datam_t* data);
-    void parse_meminfo_data(FILE* stream, meminfo_t* data);    
+    void parse_meminfo_stream(FILE* stream, meminfo_t* data);    
     int parse_system_stat_stream_for_cpu_count(FILE* stream);
     
     void parse(const char* stream);

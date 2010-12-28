@@ -211,14 +211,14 @@ void ProcessMonitor::parse_meminfo_file(meminfo_t* data)
 {
     FILE* stream;
     open_file("meminfo", &stream);
-    parse_meminfo_data(stream, data);
+    parse_meminfo_stream(stream, data);
     fclose(stream);
 }
     
 
 
 
-void ProcessMonitor::parse_meminfo_data(FILE* stream, meminfo_t* data)
+void ProcessMonitor::parse_meminfo_stream(FILE* stream, meminfo_t* data)
 {
     fscanf(stream, "MemTotal: %llu kB\n   \
                     MemFree: %llu kB\n",
