@@ -44,7 +44,7 @@ int main (int argc, const char* argv[])
 	    
         printf("\n");
         
-        sleep(1);
+        sleep(2);
     }
 
     pm->stop();

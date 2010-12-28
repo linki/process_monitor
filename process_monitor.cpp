@@ -200,30 +200,53 @@ void ProcessMonitor::parse_system_stat_file(system_data_t* stat)
 
 void ProcessMonitor::parse_system_stat_stream(FILE* stream, system_data_t* stat_data)
 {
-    fscanf(stream, "cpu %lu %lu %lu %lu %lu %lu %lu %lu %lu\n",
+    char line[64];
+    
+    fgets(line, 64, stream);
+    sscanf(line, "cpu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
         &stat_data->cpus.utime, &stat_data->cpus.nice, &stat_data->cpus.stime, &stat_data->cpus.idle, &stat_data->cpus.iowait,
         &stat_data->cpus.irq, &stat_data->cpus.softirq, &stat_data->cpus.steal, &stat_data->cpus.guest);
         
     stat_data->cpus.total = stat_data->cpus.utime + stat_data->cpus.stime + stat_data->cpus.idle;
 
-    int i = 0;
+    int i;
 
-    while
-    (
-        fscanf(stream, "cpu%*d %lu %lu %lu %lu %lu %lu %lu %lu %lu\n",
-            &stat_data->cpu[i].utime, &stat_data->cpu[i].nice, &stat_data->cpu[i].stime, &stat_data->cpu[i].idle, &stat_data->cpu[i].iowait,
-            &stat_data->cpu[i].irq, &stat_data->cpu[i].softirq, &stat_data->cpu[i].steal, &stat_data->cpu[i].guest)
-    )
+    while (!feof(stream))
     {
-        stat_data->cpu[i].total = stat_data->cpu[i].utime + stat_data->cpu[i].stime + stat_data->cpu[i].idle;
-        ++i;
+        fgets(line, 64, stream);
+
+        if (sscanf(line, "cpu%d", &i))
+        {
+            sscanf(line, "cpu%*d %lu %lu %lu %lu %lu %lu %lu %lu %lu",
+                &stat_data->cpu[i].utime, &stat_data->cpu[i].nice, &stat_data->cpu[i].stime, &stat_data->cpu[i].idle, &stat_data->cpu[i].iowait,
+                &stat_data->cpu[i].irq, &stat_data->cpu[i].softirq, &stat_data->cpu[i].steal, &stat_data->cpu[i].guest);
+            
+        	stat_data->cpu[i].total = stat_data->cpu[i].utime + stat_data->cpu[i].stime + stat_data->cpu[i].idle;
+        }
+        else
+        {
+            break;
+        }
     }
 }
 
 int ProcessMonitor::parse_system_stat_stream_for_cpu_count(FILE* stream)
 {
+    
+    
+    
+
     int i;
-    while (fscanf(stream, "cpu%d %*u %*u %*u %*u %*u %*u %*u %*u %*u\n", &i));
+    
+    char line[64];
+    while (!feof(stream))
+    {
+        fgets(line, 64, stream);
+        sscanf(line, "cpu");
+        sscanf(line, "cpu%d", &i);
+    }    
+    
+    //while (fscanf(stream, "cpu%d %*u %*u %*u %*u %*u %*u %*u %*u %*u\n", &i));
     return i + 1;
 }
     
