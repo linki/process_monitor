@@ -300,7 +300,7 @@ TEST(ProcessMonitor, Initialization)
     ProcessMonitor* pm = new ProcessMonitor(42);
 
     EXPECT_EQ(42, pm->pid());
-    EXPECT_EQ(1, pm->interval());
+    EXPECT_EQ(2, pm->interval());
     EXPECT_STREQ("/proc", pm->procfs_path());
 }
 

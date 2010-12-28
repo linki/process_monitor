@@ -164,7 +164,7 @@ public:
     void parse_meminfo(meminfo_t* data);
             
     void parse_thread_stat_stream(FILE* stream, process_data_t* stat);
-    void parse_stat_data(FILE* stream, system_data_t* stat_data);
+    void parse_system_stat_stream(FILE* stream, system_data_t* stat_data);
 
     void parse_process_statm_stream(FILE* stream, process_datam_t* data);
     void parse_meminfo_data(FILE* stream, meminfo_t* data);    

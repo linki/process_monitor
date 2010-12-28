@@ -10,11 +10,10 @@
 ProcessMonitor::ProcessMonitor(int pid)
 {
 	_pid = pid;
-    _interval = 1;
-    
+    _interval = 2;
     _procfs_path = (char*) DEFAULT_PROCFS_PATH;
     
-    // todo
+    // todo, need to init that
     _system_data.cpu_count = 0;
     _process_data._threads = 0;
 }
@@ -171,27 +170,13 @@ void ProcessMonitor::parse_system_stat(system_data_t* stat)
     }
 
     FILE* stream = fopen(filename, "r");
-    parse_stat_data(stream, stat);
+    parse_system_stat_stream(stream, stat);
     fclose(stream);
     
     free(filename);
 }
 
-void ProcessMonitor::parse_meminfo(meminfo_t* data)
-{
-    char* filename; //todo
-    get_path("meminfo", &filename);
-    
-    FILE* stream = fopen(filename, "r");
-    parse_meminfo_data(stream, data);
-    fclose(stream);
-    
-    free(filename); 
-}
-    
-
-
-void ProcessMonitor::parse_stat_data(FILE* stream, system_data_t* stat_data)
+void ProcessMonitor::parse_system_stat_stream(FILE* stream, system_data_t* stat_data)
 {
     fscanf(stream, "cpu %lu %lu %lu %lu %lu %lu %lu %lu %lu\n",
         &stat_data->cpus.utime, &stat_data->cpus.nice, &stat_data->cpus.stime, &stat_data->cpus.idle, &stat_data->cpus.iowait,
@@ -212,6 +197,20 @@ void ProcessMonitor::parse_stat_data(FILE* stream, system_data_t* stat_data)
         ++i;
     }
 }
+void ProcessMonitor::parse_meminfo(meminfo_t* data)
+{
+    char* filename; //todo
+    get_path("meminfo", &filename);
+    
+    FILE* stream = fopen(filename, "r");
+    parse_meminfo_data(stream, data);
+    fclose(stream);
+    
+    free(filename); 
+}
+    
+
+
 
 void ProcessMonitor::parse_meminfo_data(FILE* stream, meminfo_t* data)
 {
