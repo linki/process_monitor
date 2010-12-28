@@ -69,16 +69,16 @@ void ProcessMonitor::stop()
 void ProcessMonitor::fetch()
 {
     copy_system_data(&_last_system_data, &_system_data);
-    parse_system(&_system_data);
-    
     copy_process_data(&_last_process_data, &_process_data);
+    
+    parse_system(&_system_data);
     parse_process(_pid, &_process_data);
 }
 
 void ProcessMonitor::parse_system(system_data_t* system_data)
 {
     parse_system_stat_file(system_data);
-    parse_meminfo(&system_data->_memory_data);
+    parse_meminfo_file(&system_data->_memory_data);
 }
 
 void ProcessMonitor::parse_process(int pid, process_data_t* process_data)
@@ -207,7 +207,7 @@ int ProcessMonitor::parse_system_stat_stream_for_cpu_count(FILE* stream)
     return i + 1;
 }
     
-void ProcessMonitor::parse_meminfo(meminfo_t* data)
+void ProcessMonitor::parse_meminfo_file(meminfo_t* data)
 {
     FILE* stream;
     open_file("meminfo", &stream);

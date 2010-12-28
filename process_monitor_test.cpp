@@ -456,7 +456,7 @@ TEST(ProcessMonitor, ParseSystemMeminfo)
     pm->procfs_path("test/proc");
 
     meminfo_t data;
-    pm->parse_meminfo(&data);
+    pm->parse_meminfo_file(&data);
           
     EXPECT_EQ(49550504, data.total); // kb
     EXPECT_EQ(47442424, data.free); //kb

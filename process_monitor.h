@@ -161,7 +161,7 @@ public:
     void parse_system_stat_file(system_data_t* system_data);
     
     void parse_process_statm_file(int pid, process_datam_t* data);
-    void parse_meminfo(meminfo_t* data);
+    void parse_meminfo_file(meminfo_t* data);
             
     void parse_thread_stat_stream(FILE* stream, process_data_t* stat);
     void parse_system_stat_stream(FILE* stream, system_data_t* stat_data);
