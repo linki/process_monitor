@@ -458,6 +458,11 @@ TEST(ProcessMonitor, ParseSystemMeminfo)
     EXPECT_EQ(49550504, data.total); // kb
     EXPECT_EQ(47442424, data.free); //kb
     EXPECT_EQ( 2108080, data.used); //kb
+    
+
+
+    
+    // mem_usage is missing
 
     // VmRSS / MemTotal = Memory Usage laut top
 }
@@ -494,10 +499,10 @@ TEST(ProcessMonitor, ComputeSystemCPUUsage)
     
     pm->fetch();
 
-    pm->_system_data.cpus.total = 200;
+    pm->_system_data.cpus.total = 240;
     pm->_system_data.cpus.idle = 180;
     
-    EXPECT_EQ(20, pm->cpu_usage());
+    EXPECT_EQ(42.86, pm->cpu_usage());
 }
 
 TEST(ProcessMonitor, ComputeSystemCPUxUsage)
@@ -515,14 +520,14 @@ TEST(ProcessMonitor, ComputeSystemCPUxUsage)
     
     pm->fetch();
 
-    pm->_system_data.cpu[0].total = 200;
+    pm->_system_data.cpu[0].total = 320;
     pm->_system_data.cpu[0].idle = 180;
 
-    pm->_system_data.cpu[1].total = 700;
+    pm->_system_data.cpu[1].total = 770;
     pm->_system_data.cpu[1].idle = 400;
     
-    EXPECT_EQ(20, pm->cpu_usage(0));
-    EXPECT_EQ(75, pm->cpu_usage(1));    
+    EXPECT_EQ(63.64, pm->cpu_usage(0));
+    EXPECT_EQ(78.73, pm->cpu_usage(1));    
 }
 
 TEST(ProcessMonitor, ComputeCorrectProcessCPUUsage)
@@ -591,11 +596,13 @@ TEST(ProcessMonitor, ComputeCorrectMemoryUsage)
     pm->_system_data._memory_data.total = 200;
     pm->_process_data._memory_data2.vm_rss = 50;    
     
-    EXPECT_EQ(25, pm->mem_usage());
+    EXPECT_EQ(25, pm->process_mem_usage());
 
     pm->fetch();
     
-    EXPECT_EQ(2, pm->mem_usage());
+    EXPECT_EQ(2, pm->process_mem_usage());
+    
+//    EXPECT_EQ( 4.25, pm->mem_usage()); //kb    
     
   //  VmRSS:	 1111020 kB
     

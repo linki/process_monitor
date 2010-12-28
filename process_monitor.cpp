@@ -349,26 +349,27 @@ void ProcessMonitor::open_file(int pid, int tid, const char* name, FILE** file)
     free(filename);
 }
 
-int ProcessMonitor::cpu_usage()
+double ProcessMonitor::cpu_usage()
 {
-    if (_system_data.cpus.total - _last_system_data.cpus.total == 0)
+    if (_system_data.cpus.total == _last_system_data.cpus.total)
     {
         return 0;
     }
     
-    return 100 - 100 * (_system_data.cpus.idle - _last_system_data.cpus.idle) / (_system_data.cpus.total - _last_system_data.cpus.total);
+    return (double) (10000 - 10000 * (_system_data.cpus.idle - _last_system_data.cpus.idle) / (_system_data.cpus.total - _last_system_data.cpus.total)) / 100;
 }
 
-int ProcessMonitor::cpu_usage(int cid)
+double ProcessMonitor::cpu_usage(int cid)
 {
-    if (_system_data.cpu[cid].total - _last_system_data.cpu[cid].total == 0)
+    if (_system_data.cpu[cid].total == _last_system_data.cpu[cid].total)
     {
         return 0;
     }
 
-    return 100 - 100 * (_system_data.cpu[cid].idle - _last_system_data.cpu[cid].idle) / (_system_data.cpu[cid].total - _last_system_data.cpu[cid].total);
+    return (double) (10000 - 10000 * (_system_data.cpu[cid].idle - _last_system_data.cpu[cid].idle) / (_system_data.cpu[cid].total - _last_system_data.cpu[cid].total)) / 100;
 }
 
+// todo, need correct formula here
 int ProcessMonitor::process_cpu_usage()
 {
     if (_system_data.cpus.total - _last_system_data.cpus.total == 0)
@@ -464,9 +465,14 @@ unsigned long ProcessMonitor::mem_free()
     return _system_data._memory_data.free;
 }
 
-int ProcessMonitor::mem_usage()
+int ProcessMonitor::process_mem_usage()
 {
     return 100 * _process_data._memory_data2.vm_rss / _system_data._memory_data.total;
+}
+
+int ProcessMonitor::mem_usage()
+{
+    return 100 - 100 * _system_data._memory_data.free / _system_data._memory_data.total;
 }
 
 void ProcessMonitor::copy_system_data(system_data_t* dest_data, system_data_t* src_data)

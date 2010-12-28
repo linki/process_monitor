@@ -205,8 +205,8 @@ public:
     char* procfs_path();
     void procfs_path(const char* procfs_path);
 
-    int cpu_usage();
-    int cpu_usage(int cid);
+    double cpu_usage();
+    double cpu_usage(int cid);
     
     int process_cpu_usage();
 
@@ -227,7 +227,8 @@ public:
     
     unsigned long mem_total();
     unsigned long mem_free();
-    
+
+    int process_mem_usage();
     int mem_usage();
     
     void copy_system_data(system_data_t* dest_data, system_data_t* src_data);
