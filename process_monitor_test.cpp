@@ -350,14 +350,6 @@ TEST(ProcessMonitor, ComputeCorrectProcfsPaths)
     free(thread_stat_path);
 }
 
-TEST(ProcessMonitor, GetNumberOfThreads)
-{
-    ProcessMonitor* pm = new ProcessMonitor(42);
-    pm->procfs_path("test/proc");
-
-    EXPECT_EQ(4, pm->parse_thread_count(42));
-}
-
 TEST(ProcessMonitor, GetThreadIdsForPid)
 {
     ProcessMonitor* pm = new ProcessMonitor(42);
@@ -403,17 +395,6 @@ TEST(ProcessMonitor, GetAttributes)
     
     EXPECT_EQ(49550504, pm->mem_total());
     EXPECT_EQ(47442424, pm->mem_free());
-}
-
-TEST(ProcessMonitor, ParseCPUCount)
-{
-    ProcessMonitor* pm = new ProcessMonitor(42);
-    pm->procfs_path("test/proc");
-
-    system_data_t system_data;
-    pm->parse_cpu_count(&system_data);
-    
-    EXPECT_EQ(12, system_data.cpu_count);
 }
 
 TEST(ProcessMonitor, ParseProcessStat)
@@ -609,29 +590,6 @@ TEST(ProcessMonitor, ParseSystemData)
 
 
 
-    
-TEST(ProcessMonitor, CopySystemdata)
-{
-    ProcessMonitor* pm = new ProcessMonitor(42);
-    pm->procfs_path("test/proc");
-    
-    // allocate before
-    system_data_t src_data;
-    system_data_t dest_data;
-    
-    pm->parse_system_stat_file(&src_data);
-    pm->copy_system_data(&dest_data, &src_data);
-
-    src_data.cpus.utime = 0;
-    src_data.cpu[0].utime = 0;
-    src_data.cpu[5].utime = 0;
-    src_data.cpu[11].utime = 0;        
-    
-    EXPECT_SYSTEM_CPUS(dest_data.cpus);
-    EXPECT_SYSTEM_CPU_0(dest_data.cpu[0]);
-    EXPECT_SYSTEM_CPU_5(dest_data.cpu[5]);
-    EXPECT_SYSTEM_CPU_11(dest_data.cpu[11]);
-}
 
 TEST(ProcessMonitor, ParseProcessDataWithThreadsAndMemory)
 {
@@ -663,6 +621,7 @@ TEST(ProcessMonitor, CopyProcessdata)
     process_data_t dest_data;
     
     ProcessMonitor::__process_data_init(&src_data);
+    ProcessMonitor::__process_data_init(&dest_data);
     
     pm->parse_process(42, &src_data);
     pm->copy_process_data(&dest_data, &src_data);
@@ -681,6 +640,32 @@ TEST(ProcessMonitor, CopyProcessdata)
     EXPECT_THREAD_STAT_1732(dest_data._thread_data[3]);
     
     EXPECT_PROCESS_STATM_42(dest_data._memory_data);
+}
+
+TEST(ProcessMonitor, CopySystemdata)
+{
+    ProcessMonitor* pm = new ProcessMonitor(42);
+    pm->procfs_path("test/proc");
+
+    // allocate before
+    system_data_t src_data;
+    system_data_t dest_data;
+
+    ProcessMonitor::__system_data_init(&src_data);
+    ProcessMonitor::__system_data_init(&dest_data);
+
+    pm->parse_system_stat_file(&src_data);
+    pm->copy_system_data(&dest_data, &src_data);
+
+    src_data.cpus.utime = 0;
+    src_data.cpu[0].utime = 0;
+    src_data.cpu[5].utime = 0;
+    src_data.cpu[11].utime = 0;        
+
+    EXPECT_SYSTEM_CPUS(dest_data.cpus);
+    EXPECT_SYSTEM_CPU_0(dest_data.cpu[0]);
+    EXPECT_SYSTEM_CPU_5(dest_data.cpu[5]);
+    EXPECT_SYSTEM_CPU_11(dest_data.cpu[11]);
 }
 
 TEST(ProcessMonitor, RememberLastFetch)

@@ -13,7 +13,10 @@ ProcessMonitor::ProcessMonitor(int pid)
     _interval = 2;
     _procfs_path = (char*) DEFAULT_PROCFS_PATH;
     
+    __system_data_init(&_last_system_data);
     __system_data_init(&_system_data);
+    
+    __process_data_init(&_last_process_data);
     __process_data_init(&_process_data);
 }
 
@@ -84,16 +87,13 @@ void ProcessMonitor::parse_system(system_data_t* system_data)
 void ProcessMonitor::parse_process(int pid, process_data_t* process_data)
 {
     parse_process_stat_file(pid, process_data);
-    
     process_data->_thread_count = parse_threads(pid, &process_data->_thread_data);
-
     parse_process_statm_file(pid, &process_data->_memory_data);
 }
 
 int ProcessMonitor::parse_threads(int pid, thread_data_t** thread_data)
 {
     int* tids;
-    
     int thread_count = _parse_thread_ids(pid, &tids);
     
     *thread_data = (thread_data_t*) realloc(*thread_data, thread_count * sizeof(thread_data_t));
@@ -117,7 +117,7 @@ void ProcessMonitor::parse_process_stat_file(int pid, process_data_t* stat)
 {
     FILE* stream;
     open_file(pid, "stat", &stream);
-    parse_thread_stat_stream(stream, stat);
+    parse_process_stat_stream(stream, stat);
     fclose(stream);
 }
 
@@ -125,12 +125,11 @@ void ProcessMonitor::parse_thread_stat_file(int pid, int tid, thread_data_t* sta
 {
     FILE* stream;
     open_file(pid, tid, "stat", &stream);
-    parse_thread_stat_stream(stream, stat);
+    parse_process_stat_stream(stream, stat);
     fclose(stream);
 }
 
-/* aka parse_process_stat_stream */
-void ProcessMonitor::parse_thread_stat_stream(FILE* stream, process_data_t* stat)
+void ProcessMonitor::parse_process_stat_stream(FILE* stream, process_data_t* stat)
 {
     fscanf(stream, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %llu %lu %ld %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %d %d %u %u %llu %lu %ld",
         &stat->pid, stat->comm, &stat->state, &stat->ppid, &stat->pgrp, &stat->session, &stat->tty_nr,
@@ -170,7 +169,7 @@ void ProcessMonitor::parse_system_stat_file(system_data_t* stat)
         stat->cpu_count = parse_system_stat_stream_for_cpu_count(stream);
         fclose(stream);
         
-        stat->cpu = (cpu_data_t*) malloc(stat->cpu_count * sizeof(cpu_data_t));        
+        stat->cpu = (cpu_data_t*) realloc(stat->cpu, stat->cpu_count * sizeof(cpu_data_t));        
     }
 
     open_file("stat", &stream);
@@ -203,7 +202,7 @@ void ProcessMonitor::parse_system_stat_stream(FILE* stream, system_data_t* stat_
 int ProcessMonitor::parse_system_stat_stream_for_cpu_count(FILE* stream)
 {
     int i;
-    while (fscanf(stream, "cpu%d %*u %*u %*u %*u %*u %*u %*u %*u %*u\n", &i));           
+    while (fscanf(stream, "cpu%d %*u %*u %*u %*u %*u %*u %*u %*u %*u\n", &i));
     return i + 1;
 }
     
@@ -214,9 +213,6 @@ void ProcessMonitor::parse_meminfo_file(meminfo_t* data)
     parse_meminfo_stream(stream, data);
     fclose(stream);
 }
-    
-
-
 
 void ProcessMonitor::parse_meminfo_stream(FILE* stream, meminfo_t* data)
 {
@@ -235,34 +231,6 @@ void ProcessMonitor::parse_meminfo_stream(FILE* stream, meminfo_t* data)
    //     sscanf(line, "MemFree: %llu kB\n", &data->free);
    // }
 }
-void ProcessMonitor::parse(const char* stream)
-{
-    sscanf(stream, "%d %s %c %d %d %d %d %d %u %lu %lu %lu %lu %lu %lu %lu %lu %ld %ld %ld %ld %llu %lu %ld %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %lu %d %d %u %u %llu %lu %ld",
-        &_process_data.pid, _process_data.comm, &_process_data.state, &_process_data.ppid, &_process_data.pgrp, &_process_data.session, &_process_data.tty_nr,
-        &_process_data.tpgid, &_process_data.flags, &_process_data.minflt, &_process_data.cminflt, &_process_data.majflt, &_process_data.cmajflt, &_process_data.utime, &_process_data.stime,
-        &_process_data.cutime, &_process_data.cstime, &_process_data.priority, &_process_data.nice, &_process_data.num_threads, &_process_data.itrealvalue,
-        &_process_data.starttime, &_process_data.vsize, &_process_data.rss, &_process_data.rsslim, &_process_data.startcode, &_process_data.endcode, &_process_data.startstack,
-        &_process_data.kstkesp, &_process_data.kstkeip, &_process_data.signal, &_process_data.blocked, &_process_data.sigignore, &_process_data.sigcatch, &_process_data.wchan,
-        &_process_data.nswap, &_process_data.cnswap, &_process_data.exit_signal, &_process_data.processor, &_process_data.rt_priority, &_process_data.policy,
-        &_process_data.delayacct_blkio_ticks, &_process_data.guest_time, &_process_data.cguest_time);
-}
-
-void ProcessMonitor::parse_cpu_count(system_data_t* stat_data)
-{
-    FILE* stream;
-    open_file("stat", &stream);
-    stat_data->cpu_count = parse_system_stat_stream_for_cpu_count(stream);
-    fclose(stream);
-}
-
-// todo
-int ProcessMonitor::parse_thread_count(int pid)
-{
-    int* pids;
-    int tcnt = _parse_thread_ids(pid, &pids);
-    free(pids);
-    return tcnt;
-}
 
 int ProcessMonitor::_parse_thread_ids(int pid, int** ptids)
 {
@@ -280,7 +248,7 @@ int ProcessMonitor::_parse_thread_ids(int pid, int** ptids)
         (*ptids)[i] = atoi(folders[i+2]->d_name);
     }
 
-    for (int i = 0; i < tcnt+2; ++i)
+    for (int i = 0; i < tcnt + 2; ++i)
     {
         free(folders[i]);
     }
@@ -296,7 +264,6 @@ void ProcessMonitor::get_path(const char* name, char** path)
 {
     int length = strlen(_procfs_path) + 1 + strlen(name) + 1; // todo
     *path = (char*) malloc(length);
-    
     snprintf(*path, length, "%s/%s", _procfs_path, name);
 }
 
@@ -304,7 +271,6 @@ void ProcessMonitor::get_path(int pid, const char* name, char** path)
 {
     int length = strlen(_procfs_path) + 1 + 5 + 1 + strlen(name) + 1; // todo
     *path = (char*) malloc(length);
-    
     snprintf(*path, length, "%s/%d/%s", _procfs_path, pid, name);
 }
 
@@ -312,7 +278,6 @@ void ProcessMonitor::get_path(int pid, int tid, const char* name, char** path)
 {
     int length = strlen(_procfs_path) + 1 + 5 + 1 + 4 + 1 + 5 + 1 + strlen(name) + 1; // todo
     *path = (char*) malloc(length);
-    
     snprintf(*path, length, "%s/%d/task/%d/%s", _procfs_path, pid, tid, name);
 }
 
@@ -370,24 +335,24 @@ int ProcessMonitor::process_cpu_usage()
     return 100 * (_process_data.total - _last_process_data.total) / (_system_data.cpus.total - _last_system_data.cpus.total);
 }
 
-int ProcessMonitor::global_thread_cpu_usage(int cid)
-{
-    if (_system_data.cpus.total - _last_system_data.cpus.total == 0)
-    {
-        return 0;
-    }
-
-    return 100 * (_process_data._thread_data[cid].total - _last_process_data._thread_data[cid].total) / (_system_data.cpus.total - _last_system_data.cpus.total);
-}
-
-int ProcessMonitor::thread_cpu_usage(int cid)
+int ProcessMonitor::thread_cpu_usage(int tid)
 {
     if (_process_data.total - _last_process_data.total == 0)
     {
         return 0;
     }
 
-    return 100 * (_process_data._thread_data[cid].total - _last_process_data._thread_data[cid].total) / (_process_data.total - _last_process_data.total);
+    return 100 * (_process_data._thread_data[tid].total - _last_process_data._thread_data[tid].total) / (_process_data.total - _last_process_data.total);
+}
+
+int ProcessMonitor::global_thread_cpu_usage(int tid)
+{
+    if (_system_data.cpus.total - _last_system_data.cpus.total == 0)
+    {
+        return 0;
+    }
+
+    return 100 * (_process_data._thread_data[tid].total - _last_process_data._thread_data[tid].total) / (_system_data.cpus.total - _last_system_data.cpus.total);
 }
 
 int ProcessMonitor::cpu_count()
@@ -455,31 +420,35 @@ unsigned long ProcessMonitor::mem_free()
     return _system_data._memory_data.free;
 }
 
-// free up cpu of destination
 void ProcessMonitor::copy_system_data(system_data_t* dest_data, system_data_t* src_data)
 {
+    free(dest_data->cpu);
+    
     *dest_data = *src_data;
     
     int num_cpus = src_data->cpu_count;
     
     if (num_cpus > 0)
     {
-        dest_data->cpu = (cpu_data_t*) malloc(num_cpus * sizeof(cpu_data_t));
-        memcpy(dest_data->cpu, src_data->cpu, num_cpus * sizeof(cpu_data_t));
+        int bytes = num_cpus * sizeof(cpu_data_t);
+        dest_data->cpu = (cpu_data_t*) malloc(bytes);
+        memcpy(dest_data->cpu, src_data->cpu, bytes);
     }
 }
 
-// free up cpu of destination
 void ProcessMonitor::copy_process_data(process_data_t* dest_data, process_data_t* src_data)
 {
+    free(dest_data->_thread_data);
+    
     *dest_data = *src_data;
     
     int num_threads = src_data->_thread_count;
     
     if (num_threads > 0)
     {
-        dest_data->_thread_data = (thread_data_t*) malloc(num_threads * sizeof(thread_data_t));
-        memcpy(dest_data->_thread_data, src_data->_thread_data, num_threads * sizeof(thread_data_t));
+        int bytes = num_threads * sizeof(thread_data_t);
+        dest_data->_thread_data = (thread_data_t*) malloc(bytes);
+        memcpy(dest_data->_thread_data, src_data->_thread_data, bytes);
     }
 }
 
