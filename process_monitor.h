@@ -7,6 +7,7 @@ struct meminfo
 {
     unsigned long long total; // MemTotal in kB
     unsigned long long free; // MemFree in kB
+    unsigned long long used; // MemTotal - MemFree in kB
 };
 
 typedef struct meminfo meminfo_t;
@@ -45,6 +46,8 @@ struct system_data
     int cpu_count;
     cpu_data_t cpus;
     cpu_data_t* cpu;
+    
+    meminfo_t _memory_data;
 };
 
 typedef struct system_data system_data_t;
@@ -53,14 +56,14 @@ struct process_data;
 
 typedef struct process_data process_data_t;
 typedef struct process_data thread_data_t;
-    
+
 struct process_data
 {
-    int _threads;
+    int _thread_count;
     
     thread_data_t* _thread_data;
     
-    process_datam_t _memory;
+    process_datam_t _memory_data;
     
 
     
@@ -136,29 +139,26 @@ class ProcessMonitor
     
 public:
 
-    int __threads;
-
-    cpu_data_t __system_stat;
-    cpu_data_t __last_system_stat;    
-    
     system_data_t _system_data;
     system_data_t _last_system_data;
 
     process_data_t _process_data;
     process_data_t _last_process_data;
-    
-    meminfo_t _memory_data;
 
-    // constructors
+    // constructor takes pid
     explicit ProcessMonitor(int pid);
     
     // methods
     void fetch();
-    void parse_process(int pid, process_data_t* process_data);    
+    
+    void parse_system(system_data_t* system_data);    
+    void parse_process(int pid, process_data_t* process_data);
+    int parse_threads(int pid, thread_data_t** thread_data);
+    void parse_thread(int pid, int tid, thread_data_t* thread_data);
     
     void parse_process_stat_file(int pid, process_data_t* stat);
     void parse_thread_stat_file(int pid, int tid, thread_data_t* stat);
-    void parse_system_stat(system_data_t* system_data);
+    void parse_system_stat_file(system_data_t* system_data);
     
     void parse_process_statm_file(int pid, process_datam_t* data);
     void parse_meminfo(meminfo_t* data);
@@ -168,14 +168,14 @@ public:
 
     void parse_process_statm_stream(FILE* stream, process_datam_t* data);
     void parse_meminfo_data(FILE* stream, meminfo_t* data);    
-    void parse_cpu_count_data(FILE* stream, system_data_t* stat_data);
+    int parse_system_stat_stream_for_cpu_count(FILE* stream);
     
     void parse(const char* stream);
     
     void parse_cpu_count(system_data_t* stat_data);
     
     int parse_thread_count(int pid);
-    int parse_thread_ids(int pid, int** ptids);
+    int _parse_thread_ids(int pid, int** ptids);
 
     // control
     static void* run(void* data);
@@ -183,10 +183,14 @@ public:
     void stop();
 
     // extended accessors
-    char* get_path(const char* name, char** path);
-    char* get_path(int pid, const char* name, char** path);
-    char* get_path(int pid, int tid, const char* name, char** path);    
+    void get_path(const char* name, char** path);
+    void get_path(int pid, const char* name, char** path);
+    void get_path(int pid, int tid, const char* name, char** path);    
 
+    void open_file(const char* name, FILE** file);
+    void open_file(int pid, const char* name, FILE** file);
+    void open_file(int pid, int tid, const char* name, FILE** file);
+    
     // accessors
     int pid();
     unsigned interval();
@@ -219,6 +223,6 @@ public:
     void copy_system_data(system_data_t* dest_data, system_data_t* src_data);
     void copy_process_data(process_data_t* dest_data, process_data_t* src_data);    
 
-
-
+    static void __process_data_init(process_data_t* process_data);
+    static void __system_data_init(system_data_t* system_data);
 };

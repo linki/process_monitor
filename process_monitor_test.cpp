@@ -325,7 +325,7 @@ TEST(ProcessMonitor, FetchUpdatesTheData)
     EXPECT_THREAD_STAT_1731(pm->_process_data._thread_data[2]);
     EXPECT_THREAD_STAT_1732(pm->_process_data._thread_data[3]);
     
-    EXPECT_PROCESS_STATM_42(pm->_process_data._memory);
+    EXPECT_PROCESS_STATM_42(pm->_process_data._memory_data);
 }
 
 TEST(ProcessMonitor, ComputeCorrectProcfsPaths)
@@ -364,7 +364,7 @@ TEST(ProcessMonitor, GetThreadIdsForPid)
     pm->procfs_path("test/proc");
 
     int* tids;
-    int tcnt = pm->parse_thread_ids(42, &tids);
+    int tcnt = pm->_parse_thread_ids(42, &tids);
     
     EXPECT_EQ(4, tcnt);
     
@@ -460,6 +460,10 @@ TEST(ProcessMonitor, ParseSystemMeminfo)
           
     EXPECT_EQ(49550504, data.total); // kb
     EXPECT_EQ(47442424, data.free); //kb
+    EXPECT_EQ( 2108080, data.used); //kb
+
+    // maybe
+    // VmRSS / MemTotal = Memory Usage laut top
 }
 
 TEST(ProcessMonitor, ParseLoadAvg)
@@ -592,13 +596,19 @@ TEST(ProcessMonitor, ParseSystemData)
 
     // allocate before
     system_data_t system_data;
-    pm->parse_system_stat(&system_data);
+    // todo
+    system_data.cpu_count = 0;
+    pm->parse_system_stat_file(&system_data);
 
     EXPECT_SYSTEM_CPUS(system_data.cpus);
     EXPECT_SYSTEM_CPU_0(system_data.cpu[0]);
     EXPECT_SYSTEM_CPU_5(system_data.cpu[5]);
     EXPECT_SYSTEM_CPU_11(system_data.cpu[11]);
 }
+
+
+
+
     
 TEST(ProcessMonitor, CopySystemdata)
 {
@@ -609,7 +619,7 @@ TEST(ProcessMonitor, CopySystemdata)
     system_data_t src_data;
     system_data_t dest_data;
     
-    pm->parse_system_stat(&src_data);
+    pm->parse_system_stat_file(&src_data);
     pm->copy_system_data(&dest_data, &src_data);
 
     src_data.cpus.utime = 0;
@@ -629,6 +639,9 @@ TEST(ProcessMonitor, ParseProcessDataWithThreadsAndMemory)
     pm->procfs_path("test/proc");
 
     process_data_t stat_data;
+    
+    ProcessMonitor::__process_data_init(&stat_data);
+
     pm->parse_process(42, &stat_data);
     
     EXPECT_PROCESS_STAT_42(stat_data);
@@ -638,7 +651,7 @@ TEST(ProcessMonitor, ParseProcessDataWithThreadsAndMemory)
     EXPECT_THREAD_STAT_1731(stat_data._thread_data[2]);
     EXPECT_THREAD_STAT_1732(stat_data._thread_data[3]);
     
-    EXPECT_PROCESS_STATM_42(stat_data._memory);
+    EXPECT_PROCESS_STATM_42(stat_data._memory_data);
 }
 
 TEST(ProcessMonitor, CopyProcessdata)
@@ -648,6 +661,8 @@ TEST(ProcessMonitor, CopyProcessdata)
     
     process_data_t src_data;
     process_data_t dest_data;
+    
+    ProcessMonitor::__process_data_init(&src_data);
     
     pm->parse_process(42, &src_data);
     pm->copy_process_data(&dest_data, &src_data);
@@ -665,7 +680,7 @@ TEST(ProcessMonitor, CopyProcessdata)
     EXPECT_THREAD_STAT_1731(dest_data._thread_data[2]);
     EXPECT_THREAD_STAT_1732(dest_data._thread_data[3]);
     
-    EXPECT_PROCESS_STATM_42(dest_data._memory);
+    EXPECT_PROCESS_STATM_42(dest_data._memory_data);
 }
 
 TEST(ProcessMonitor, RememberLastFetch)
@@ -691,4 +706,24 @@ TEST(ProcessMonitor, RememberLastFetch)
     EXPECT_EQ(2, pm->_last_system_data.cpus.utime);
     EXPECT_EQ(4, pm->_last_system_data.cpu[5].utime);
     EXPECT_EQ(6, pm->_last_process_data.utime);
+}
+
+TEST(ProcessMonitor, InitProcessData)
+{
+    process_data_t process_data;
+
+    ProcessMonitor::__process_data_init(&process_data);
+    
+    EXPECT_EQ(0, process_data._thread_count);
+    EXPECT_EQ(NULL, process_data._thread_data);    
+}
+
+TEST(ProcessMonitor, InitSystemData)
+{
+    system_data_t system_data;
+
+    ProcessMonitor::__system_data_init(&system_data);
+    
+    EXPECT_EQ(0, system_data.cpu_count);
+    EXPECT_EQ(NULL, system_data.cpu);    
 }
