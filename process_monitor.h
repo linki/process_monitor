@@ -4,12 +4,14 @@
 #define DEFAULT_PROCFS_PATH "/proc"
 
 // todo change name
-struct process_status_t
+struct memory_data
 {
     // in kbytes
     unsigned long long vm_size; // VmSize: Virtual memory size
     unsigned long long vm_rss; // Resident set size.
 };
+
+typedef struct memory_data memory_data_t;
 
 struct meminfo
 {
@@ -20,20 +22,6 @@ struct meminfo
 };
 
 typedef struct meminfo meminfo_t;
-
-struct process_datam
-{
-    // in pages (4kb/page)
-    unsigned long long size; // total program size
-    unsigned long long resident; // resident set size
-    unsigned long long share; // shared pages (from shared mappings)
-    unsigned long long text; // text (code)
-    unsigned long long lib; // library (unused in Linux 2.6)
-    unsigned long long data; // data + stack
-    unsigned long long dt; // dirty pages (unused in Linux 2.6)
-};
-
-typedef struct process_datam process_datam_t;
 
 struct cpu_data
 {
@@ -73,8 +61,7 @@ struct process_data
     
     thread_data_t* _thread_data;
     
-    process_datam_t _memory_data;
-    process_status_t _memory_data2;
+    memory_data_t _memory_data;
     
 
     
@@ -169,28 +156,26 @@ public:
     // methods
     void fetch();
     
-    void parse_system(system_data_t* system_data);    
-    void parse_process(int pid, process_data_t* process_data);
-    int parse_threads(int pid, thread_data_t** thread_data);
+    void parse_system_data(system_data_t* system_data);    
+    void parse_process_data(int pid, process_data_t* process_data);
+    void parse_process_threads(int pid, thread_data_t** thread_data, int* thread_count);
     void parse_thread(int pid, int tid, thread_data_t* thread_data);
     
     void parse_process_stat_file(int pid, process_data_t* stat);
     void parse_thread_stat_file(int pid, int tid, thread_data_t* stat);
     void parse_system_stat_file(system_data_t* system_data);
     
-    void parse_process_statm_file(int pid, process_datam_t* data);
-    void parse_process_status_file(int pid, process_status_t* data);
-    void parse_meminfo_file(meminfo_t* data);
+    void parse_process_status_file(int pid, memory_data_t* data);
+    void parse_system_meminfo_file(meminfo_t* data);
             
     void parse_process_stat_stream(FILE* stream, process_data_t* stat);
-    void parse_process_statm_stream(FILE* stream, process_datam_t* data);
-    void parse_process_status_stream(FILE* stream, process_status_t* data);
+    void parse_process_status_stream(FILE* stream, memory_data_t* data);
     void parse_system_stat_stream(FILE* stream, system_data_t* stat_data);
 
     void parse_meminfo_stream(FILE* stream, meminfo_t* data);    
     int parse_system_stat_stream_for_cpu_count(FILE* stream);
     
-    int _parse_thread_ids(int pid, int** ptids);
+    int parse_process_thread_ids(int pid, int** ptids);
 
     // control
     static void* run(void* data);
@@ -210,7 +195,6 @@ public:
     int pid();
     int interval();
     char* procfs_path();
-    void procfs_path(const char* procfs_path);
 
     double cpu_usage();
     double cpu_usage(int cid);
@@ -240,10 +224,10 @@ public:
     
     void copy_system_data(system_data_t* dest_data, system_data_t* src_data);
     void copy_process_data(process_data_t* dest_data, process_data_t* src_data);
-    
 
-    static void _init_process_data(process_data_t* process_data);
-    static void _init_system_data(system_data_t* system_data);
+    static void _initialize_system_data(system_data_t* system_data);
+    static void _initialize_process_data(process_data_t* process_data);
+    static void _initialize_thread_data(thread_data_t** thread_data, int* thread_count);
 };
 
 /*

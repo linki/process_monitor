@@ -18,20 +18,19 @@ int main (int argc, const char* argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	ProcessMonitor pm(pid);
-    // pm->procfs_path("test/proc");
+	ProcessMonitor pm(pid, "test/proc");
     pm.fetch();
-    pm.fetch();    
+    pm.fetch();
 
     pm.start();
 
     while (1)
     {
-        // printf("s: %c p: %d ", pm->state(), pm->process_cpu_usage());
+        // printf("s: %c p: %d ", pm.state(), pm.process_cpu_usage());
         // 
-        // for (int i = 0; i < pm->threads(); ++i)
+        // for (int i = 0; i < pm.threads(); ++i)
         // {
-        //     printf("s%d: %c g%d: %d l%d: %d ", i, pm->state(), i, pm->global_thread_cpu_usage(i), i, pm->thread_cpu_usage(i));
+        //     printf("s%d: %c g%d: %d l%d: %d ", i, pm.state(), i, pm.global_thread_cpu_usage(i), i, pm.thread_cpu_usage(i));
         // }
         
         printf("a: %3.2f", pm.cpu_usage());
