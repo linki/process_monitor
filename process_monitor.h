@@ -145,9 +145,11 @@ class ProcessMonitor
     pthread_t _runner;
 
     int _pid;
-    unsigned _interval;
+    int _interval;
     char* _procfs_path;
     
+    void initialize(int pid, int interval, const char* procfs_path);
+
 public:
 
     system_data_t _system_data;
@@ -158,6 +160,11 @@ public:
 
     // constructor takes pid
     explicit ProcessMonitor(int pid);
+    explicit ProcessMonitor(int pid, const char* procfs_path);
+    
+    ~ProcessMonitor();
+    
+    
     
     // methods
     void fetch();
@@ -201,7 +208,7 @@ public:
     
     // accessors
     int pid();
-    unsigned interval();
+    int interval();
     char* procfs_path();
     void procfs_path(const char* procfs_path);
 
@@ -232,10 +239,11 @@ public:
     int mem_usage();
     
     void copy_system_data(system_data_t* dest_data, system_data_t* src_data);
-    void copy_process_data(process_data_t* dest_data, process_data_t* src_data);    
+    void copy_process_data(process_data_t* dest_data, process_data_t* src_data);
+    
 
-    static void __process_data_init(process_data_t* process_data);
-    static void __system_data_init(system_data_t* system_data);
+    static void _init_process_data(process_data_t* process_data);
+    static void _init_system_data(system_data_t* system_data);
 };
 
 /*

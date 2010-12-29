@@ -316,8 +316,7 @@ TEST(ProcessMonitor, ChangeProcPath)
 
 TEST(ProcessMonitor, FetchUpdatesTheData)
 {
-    ProcessMonitor* pm = new ProcessMonitor(42);
-    pm->procfs_path("test/proc");
+    ProcessMonitor* pm = new ProcessMonitor(42, "test/proc");
 
     pm->fetch();
 
@@ -618,7 +617,7 @@ TEST(ProcessMonitor, ParseSystemData)
     // allocate before
     system_data_t system_data;
     
-    ProcessMonitor::__system_data_init(&system_data);
+    ProcessMonitor::_init_system_data(&system_data);
 
     pm->parse_system_stat_file(&system_data);
 
@@ -639,7 +638,7 @@ TEST(ProcessMonitor, ParseProcessDataWithThreadsAndMemory)
 
     process_data_t stat_data;
     
-    ProcessMonitor::__process_data_init(&stat_data);
+    ProcessMonitor::_init_process_data(&stat_data);
 
     pm->parse_process(42, &stat_data);
     
@@ -661,8 +660,8 @@ TEST(ProcessMonitor, CopyProcessdata)
     process_data_t src_data;
     process_data_t dest_data;
     
-    ProcessMonitor::__process_data_init(&src_data);
-    ProcessMonitor::__process_data_init(&dest_data);
+    ProcessMonitor::_init_process_data(&src_data);
+    ProcessMonitor::_init_process_data(&dest_data);
     
     pm->parse_process(42, &src_data);
     pm->copy_process_data(&dest_data, &src_data);
@@ -692,8 +691,8 @@ TEST(ProcessMonitor, CopySystemdata)
     system_data_t src_data;
     system_data_t dest_data;
 
-    ProcessMonitor::__system_data_init(&src_data);
-    ProcessMonitor::__system_data_init(&dest_data);
+    ProcessMonitor::_init_system_data(&src_data);
+    ProcessMonitor::_init_system_data(&dest_data);
 
     pm->parse_system_stat_file(&src_data);
     pm->copy_system_data(&dest_data, &src_data);
@@ -738,7 +737,7 @@ TEST(ProcessMonitor, InitProcessData)
 {
     process_data_t process_data;
 
-    ProcessMonitor::__process_data_init(&process_data);
+    ProcessMonitor::_init_process_data(&process_data);
     
     EXPECT_EQ(0, process_data._thread_count);
     EXPECT_EQ(NULL, process_data._thread_data);    
@@ -748,7 +747,7 @@ TEST(ProcessMonitor, InitSystemData)
 {
     system_data_t system_data;
 
-    ProcessMonitor::__system_data_init(&system_data);
+    ProcessMonitor::_init_system_data(&system_data);
     
     EXPECT_EQ(0, system_data.cpu_count);
     EXPECT_EQ(NULL, system_data.cpu);    

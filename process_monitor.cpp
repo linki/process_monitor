@@ -9,15 +9,32 @@
 
 ProcessMonitor::ProcessMonitor(int pid)
 {
+	initialize(pid, 2, DEFAULT_PROCFS_PATH);
+}
+
+ProcessMonitor::ProcessMonitor(int pid, const char* procfs_path)
+{
+    initialize(pid, 2, procfs_path);
+}
+
+ProcessMonitor::~ProcessMonitor()
+{
+    free(_procfs_path);
+}
+
+void ProcessMonitor::initialize(int pid, int interval, const char* procfs_path)
+{
 	_pid = pid;
-    _interval = 2;
-    _procfs_path = (char*) DEFAULT_PROCFS_PATH;
+    _interval = interval;
     
-    __system_data_init(&_last_system_data);
-    __system_data_init(&_system_data);
-    
-    __process_data_init(&_last_process_data);
-    __process_data_init(&_process_data);
+    _procfs_path = (char*) malloc(strlen(procfs_path) + 1);
+    strcpy(_procfs_path, procfs_path);
+
+    _init_system_data(&_last_system_data);
+    _init_system_data(&_system_data);
+
+    _init_process_data(&_last_process_data);
+    _init_process_data(&_process_data);
 }
 
 void* ProcessMonitor::run(void* instance)
@@ -425,7 +442,7 @@ int ProcessMonitor::pid()
     return _pid;
 }
 
-unsigned ProcessMonitor::interval()
+int ProcessMonitor::interval()
 {
     return _interval;
 }
@@ -507,13 +524,13 @@ void ProcessMonitor::copy_process_data(process_data_t* dest_data, process_data_t
     }
 }
 
-void ProcessMonitor::__process_data_init(process_data_t* process_data)
+void ProcessMonitor::_init_process_data(process_data_t* process_data)
 {
     process_data->_thread_count = 0;
     process_data->_thread_data = NULL;
 }
 
-void ProcessMonitor::__system_data_init(system_data_t* system_data)
+void ProcessMonitor::_init_system_data(system_data_t* system_data)
 {
     system_data->cpu_count = 0;
     system_data->cpu = NULL;

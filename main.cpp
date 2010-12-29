@@ -18,12 +18,12 @@ int main (int argc, const char* argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	ProcessMonitor* pm = new ProcessMonitor(pid);
+	ProcessMonitor pm(pid);
     // pm->procfs_path("test/proc");
-    pm->fetch();
-    pm->fetch();    
+    pm.fetch();
+    pm.fetch();    
 
-    pm->start();
+    pm.start();
 
     while (1)
     {
@@ -34,11 +34,11 @@ int main (int argc, const char* argv[])
         //     printf("s%d: %c g%d: %d l%d: %d ", i, pm->state(), i, pm->global_thread_cpu_usage(i), i, pm->thread_cpu_usage(i));
         // }
         
-        printf("a: %3.2f", pm->cpu_usage());
+        printf("a: %3.2f", pm.cpu_usage());
         
-        for (int i = 0; i < pm->cpu_count(); ++i)
+        for (int i = 0; i < pm.cpu_count(); ++i)
         {
-            printf(" c%d: %3.2f ", i, pm->cpu_usage(i));
+            printf(" c%d: %3.2f ", i, pm.cpu_usage(i));
         }
 	    
 	    
@@ -47,7 +47,7 @@ int main (int argc, const char* argv[])
         sleep(2);
     }
 
-    pm->stop();
+    pm.stop();
 
     return EXIT_SUCCESS;
 }
