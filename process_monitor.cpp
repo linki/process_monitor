@@ -12,9 +12,19 @@ ProcessMonitor::ProcessMonitor(int pid)
    initialize(pid, PM_DEFAULT_INTERVAL, PM_DEFAULT_PROCFS_PATH);
 }
 
+ProcessMonitor::ProcessMonitor(int pid, int interval)
+{
+    initialize(pid, interval, PM_DEFAULT_PROCFS_PATH);
+}
+
 ProcessMonitor::ProcessMonitor(int pid, const char* procfs_path)
 {
    initialize(pid, PM_DEFAULT_INTERVAL, procfs_path);
+}
+
+ProcessMonitor::ProcessMonitor(int pid, int interval, const char* procfs_path)
+{
+    initialize(pid, interval, procfs_path);
 }
 
 void ProcessMonitor::initialize(int pid, int interval, const char* procfs_path)

@@ -18,7 +18,7 @@ int main(int argc, const char* argv[])
       exit(EXIT_FAILURE);
    }
 
-   ProcessMonitor pm(pid); //, "test/proc");
+   ProcessMonitor pm(pid, 4); //, "test/proc");
    pm.fetch();
    pm.fetch();
 

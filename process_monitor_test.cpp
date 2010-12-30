@@ -321,6 +321,17 @@ TEST(ProcessMonitor, InitializeWithDifferentProcfsPath)
    EXPECT_STREQ("/some/other/procfs/path", pm.procfs_path());
 }
 
+TEST(ProcessMonitor, InitializeWithDifferentIntervalAndProcfs)
+{
+    ProcessMonitor pm1(42, 5);
+    EXPECT_EQ(5, pm1.interval());
+    EXPECT_STREQ("/proc", pm1.procfs_path());
+
+    ProcessMonitor pm2(42, 5, "/some/other/procfs/path");
+    EXPECT_EQ(5, pm2.interval());
+    EXPECT_STREQ("/some/other/procfs/path", pm2.procfs_path());
+}
+
 TEST(ProcessMonitor, FetchUpdatesProcessAndSystemData)
 {
    ProcessMonitor pm(42, "test/proc");

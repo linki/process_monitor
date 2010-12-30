@@ -98,9 +98,9 @@ struct process_data
    long               itrealvalue;           // %ld unused, always 0
 
    unsigned long long starttime;             // %llu The time in jiffies the process started after system boot.
-   unsigned long      vsize;                 // %lu Virtual memory size in bytes.
+   unsigned long      vsize;                 // %lu Virtual memory size in bytes. = VMSize * 1024
 
-   long               rss;                   // %ld Resident  Set  Size: number of pages the process has in real memory
+   long               rss;                   // %ld Resident  Set  Size: number of pages the process has in real memory = VMRSS / 4
    unsigned long      rsslim;                // %lu  Current  soft  limit  in  bytes  on  the  rss of the process
 
    unsigned long      startcode;             // %lu The address above which program text can run.
@@ -150,7 +150,9 @@ process_data_t _last_process_data;
 
 // constructor takes pid
 explicit ProcessMonitor(int pid);
+explicit ProcessMonitor(int pid, int interval);
 explicit ProcessMonitor(int pid, const char* procfs_path);
+explicit ProcessMonitor(int pid, int interval, const char* procfs_path);
 
 ~ProcessMonitor();
 
