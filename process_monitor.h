@@ -1,19 +1,23 @@
 #include <stdio.h>
 #include <pthread.h>
 
-#define PM_DEFAULT_PROCFS_PATH "/proc"
-#define PM_DEFAULT_INTERVAL    2
+#define PM_DEFAULT_PROCFS_PATH    "/proc"
+#define PM_DEFAULT_INTERVAL       2
 
-// todo change name
+typedef struct system_data    system_data_t;
+typedef struct process_data   process_data_t;
+typedef struct process_data   thread_data_t;
+typedef struct cpu_data       cpu_data_t;
+typedef struct memory_data    memory_data_t;
+typedef struct meminfo        meminfo_t;
+
 struct memory_data
 {
    // in kbytes
-   unsigned long vm_peak; // VmPeak: Peak virtual memory size.
-   unsigned long vm_size; // VmSize: Virtual memory size
-   unsigned long vm_rss;  // Resident set size.
+   unsigned long peak;  // VmPeak: Peak virtual memory size.
+   unsigned long total; // VmSize: Virtual memory size
+   unsigned long rss;   // Resident set size.
 };
-
-typedef struct memory_data   memory_data_t;
 
 struct meminfo
 {
@@ -22,8 +26,6 @@ struct meminfo
    unsigned long free;  // MemFree in kB
    unsigned long used;  // MemTotal - MemFree in kB
 };
-
-typedef struct meminfo   meminfo_t;
 
 struct cpu_data
 {
@@ -39,36 +41,21 @@ struct cpu_data
    unsigned long guest;   // time spent running a virtual CPU for guest operating systems under the control of the Linux kernel
 };
 
-typedef struct cpu_data   cpu_data_t;
-
 struct system_data
 {
-   int        cpu_count;
-   cpu_data_t cpus;
-   cpu_data_t * cpu;
-
+   int        _cpu_count;
+   cpu_data_t _cpus_data;
+   cpu_data_t * _cpu_data;
    meminfo_t  _memory_data;
 };
 
-typedef struct system_data    system_data_t;
-
-struct process_data;
-
-typedef struct process_data   process_data_t;
-typedef struct process_data   thread_data_t;
-
 struct process_data
 {
-   int           _thread_count;
+   int                _thread_count;
+   thread_data_t      * _thread_data;
+   memory_data_t      _memory_data;
 
-   thread_data_t * _thread_data;
-
-   memory_data_t _memory_data;
-
-
-
-   unsigned long      total; // total is the sum of utime and stime
-
+   unsigned long      total;                 // total is the sum of utime and stime
 
    int                pid;                   // %d
    char               comm[20];              // %s executable name
@@ -131,7 +118,6 @@ struct process_data
 
 class ProcessMonitor
 {
-
 pthread_t _runner;
 
 int       _pid;
@@ -148,57 +134,25 @@ system_data_t  _last_system_data;
 process_data_t _process_data;
 process_data_t _last_process_data;
 
-// constructor takes pid
+// constructors take pid, interval and path to procfs
 explicit ProcessMonitor(int pid);
 explicit ProcessMonitor(int pid, int interval);
 explicit ProcessMonitor(int pid, const char* procfs_path);
 explicit ProcessMonitor(int pid, int interval, const char* procfs_path);
 
+// destructor
 ~ProcessMonitor();
 
-// methods
-void fetch();
-
-void parse_system_data(system_data_t* system_data);
-void parse_process_data(int pid, process_data_t* process_data);
-void parse_process_threads(int pid, thread_data_t** thread_data, int* thread_count);
-void parse_thread(int pid, int tid, thread_data_t* thread_data);
-
-void parse_process_stat_file(int pid, process_data_t* stat);
-void parse_thread_stat_file(int pid, int tid, thread_data_t* stat);
-void parse_system_stat_file(system_data_t* system_data);
-
-void parse_process_status_file(int pid, memory_data_t* data);
-void parse_system_meminfo_file(meminfo_t* data);
-
-void parse_process_stat_stream(FILE* stream, process_data_t* stat);
-void parse_process_status_stream(FILE* stream, memory_data_t* data);
-void parse_system_stat_stream(FILE* stream, system_data_t* stat_data);
-
-void parse_meminfo_stream(FILE* stream, meminfo_t* data);
-int parse_system_stat_stream_for_cpu_count(FILE* stream);
-
-int parse_process_thread_ids(int pid, int** ptids);
-
 // control
-static void* run(void* data);
+void fetch();
 void start();
 void stop();
-
-// extended accessors
-void get_path(const char* name, char** path);
-void get_path(int pid, const char* name, char** path);
-void get_path(int pid, int tid, const char* name, char** path);
-
-void open_file(const char* name, FILE** file);
-void open_file(int pid, const char* name, FILE** file);
-void open_file(int pid, int tid, const char* name, FILE** file);
 
 // accessors
 int pid();
 int interval();
 char* procfs_path();
-
+int valid_procfs_path();
 int num_cpus();
 
 // remember start time of processmonitor and scope these values in that timeframe
@@ -213,6 +167,7 @@ unsigned long system_mem_free();
 unsigned long system_mem_used();
 
 char state();
+char* executable_name();
 
 unsigned long process_mem_total();
 unsigned long process_mem_used();
@@ -231,68 +186,47 @@ double process_cpus_usage();
 double thread_cpus_usage(int tid);
 double process_thread_cpus_usage(int tid);
 
+// thread loop
+static void* run(void* data);
+
+// path helpers
+void get_path(const char* name, char** path);
+void get_path(int pid, const char* name, char** path);
+void get_path(int pid, int tid, const char* name, char** path);
+
+// file helpers
+void open_file(const char* name, FILE** file);
+void open_file(int pid, const char* name, FILE** file);
+void open_file(int pid, int tid, const char* name, FILE** file);
+
+// parsing
+void parse_system_data(system_data_t* system_data);
+void parse_process_data(int pid, process_data_t* process_data);
+void parse_process_threads(int pid, thread_data_t** thread_data, int* thread_count);
+void parse_thread(int pid, int tid, thread_data_t* thread_data);
+
+void parse_process_stat_file(int pid, process_data_t* stat);
+void parse_thread_stat_file(int pid, int tid, thread_data_t* stat);
+void parse_system_stat_file(system_data_t* system_data);
+
+void parse_process_status_file(int pid, memory_data_t* data);
+void parse_system_meminfo_file(meminfo_t* data);
+
+void parse_process_stat_stream(FILE* stream, process_data_t* stat);
+void parse_process_status_stream(FILE* stream, memory_data_t* data);
+void parse_system_stat_stream(FILE* stream, system_data_t* stat_data);
+void parse_meminfo_stream(FILE* stream, meminfo_t* data);
+
+int parse_system_stat_stream_for_cpu_count(FILE* stream);
+
+int parse_process_thread_ids(int pid, int** ptids);
+
+// private
 void copy_system_data(system_data_t* dest_data, system_data_t* src_data);
 void copy_process_data(process_data_t* dest_data, process_data_t* src_data);
 
+// initializers
 static void initialize_system_data(system_data_t* system_data);
 static void initialize_process_data(process_data_t* process_data);
 static void initialize_thread_data(thread_data_t** thread_data, int* thread_count);
-
 };
-
-/*
- * The fields are as follows:
- *
- * Name: Command run by this process.
- *
- * State: Current state of the process.  One of "R (running)", "S (sleeping)", "D (disk sleep)", "T (stopped)", "T (tracing stop)",  "Z  (zombie)",
- *             or "X (dead)".
- *
- * Tgid: Thread group ID (i.e., Process ID).
- *
- * Pid: Thread ID (see gettid(2)).
- *
- * TracerPid: PID of process tracing this process (0 if not being traced).
- *
- * Uid, Gid: Real, effective, saved set, and file system UIDs (GIDs).
- *
- * FDSize: Number of file descriptor slots currently allocated.
- * FDSize: Number of file descriptor slots currently allocated.
- *
- * Groups: Supplementary group list.
- *
- * VmPeak: Peak virtual memory size.
- *
- * VmSize: Virtual memory size.
- *
- * VmLck: Locked memory size.
- *
- * VmHWM: Peak resident set size ("high water mark").
- *
- * VmRSS: Resident set size.
- *
- * VmData, VmStk, VmExe: Size of data, stack, and text segments.
- *
- * VmLib: Shared library code size.
- *
- * VmPTE: Page table entries size (since Linux 2.6.10).
- *
- * Threads: Number of threads in process containing this thread.
- * SigPnd, ShdPnd: Number of signals pending for thread and for process as a whole (see pthreads(7) and signal(7)).
- *
- * SigBlk, SigIgn, SigCgt: Masks indicating signals being blocked, ignored, and caught (see signal(7)).
- *
- * CapInh, CapPrm, CapEff: Masks of capabilities enabled in inheritable, permitted, and effective sets (see capabilities(7)).
- *
- * CapBnd: Capability Bounding set (since kernel 2.6.26, see capabilities(7)).
- *
- * Cpus_allowed: Mask of CPUs on which this process may run (since Linux 2.6.24, see cpuset(7)).
- *
- * Cpus_allowed_list: Same as previous, but in "list format" (since Linux 2.6.26, see cpuset(7)).
- *
- * Mems_allowed: Mask of memory nodes allowed to this process (since Linux 2.6.24, see cpuset(7)).
- *
- * Mems_allowed_list: Same as previous, but in "list format" (since Linux 2.6.26, see cpuset(7)).
- *
- * voluntary_context_switches, nonvoluntary_context_switches: Number of voluntary and involuntary context switches (since Linux 2.6.23).
- */

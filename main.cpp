@@ -6,7 +6,7 @@
 
 int main(int argc, const char* argv[])
 {
-   pid_t pid;
+   int pid;
 
    if (argc == 2)
    {
@@ -18,52 +18,59 @@ int main(int argc, const char* argv[])
       exit(EXIT_FAILURE);
    }
 
-   ProcessMonitor pm(pid, 4); //, "test/proc");
-   pm.fetch();
-   pm.fetch();
+   ProcessMonitor pm(pid, "test/proc");
+
+   if (!pm.valid_procfs_path())
+   {
+      printf("ERROR: invalid procfs path or process id\n");
+      exit(EXIT_FAILURE);
+   }
 
    pm.start();
 
    while (1)
    {
-       printf("Overall CPU Usage: %3.2f%%\n", pm.cpus_usage());
-       printf("  %d Cores: ", pm.num_cpus());
-       
-       for (int i = 0; i < pm.num_cpus(); ++i)
-       {
-           printf("%3.2f%% ", pm.cpu_usage(i));           
-       }
-       
-       printf("\n\n");
-       
-       printf("Overall CPU Usage by Process %d: %3.2f%%\n", pid, pm.process_cpus_usage());
-       printf("  %d Threads: ", pm.num_threads());
+      printf("\033[2J");            // clear screen
+      printf("\033[%d;%dH", 0, 0);  // cursor to 0, 0
 
-       for (int i = 0; i < pm.num_threads(); ++i)
-       {
-           printf("%3.2f%% ", pm.process_thread_cpus_usage(i));           
-       }
-       
-       printf("\n\n");
-       
-       printf("Total Memory: %lu kB\n", pm.system_mem_total());
-       printf("Free  Memory: %lu kB\n", pm.system_mem_free());
-       printf("Overall Memory Usage: %3.2f%%\n", pm.system_mem_usage());
-       
-       printf("\n");
-       
-       printf("Total Memory of Process %d: %lu kB\n", pid, pm.process_mem_total());
-       printf("Memory Used by Process %d: %lu kB\n", pid, pm.process_mem_used());
-       printf("Process Memory Usage: %3.2f%%\n", pm.process_mem_usage());
-       
-       printf("\n");
+      printf("Process: %s\n\n", pm.executable_name());
 
-       sleep(5);
+      printf("Overall CPU Usage: %3.2f%%\n", pm.cpus_usage());
+      printf("  %d Cores: ", pm.num_cpus());
+
+      for (int i = 0; i < pm.num_cpus(); ++i)
+      {
+         printf("%3.2f%% ", pm.cpu_usage(i));
+      }
+
+      printf("\n\n");
+
+      printf("Overall CPU Usage by Process %d: %3.2f%%\n", pid, pm.process_cpus_usage());
+      printf("  %d Threads: ", pm.num_threads());
+
+      for (int i = 0; i < pm.num_threads(); ++i)
+      {
+         printf("%3.2f%% ", pm.process_thread_cpus_usage(i));
+      }
+
+      printf("\n\n");
+
+      printf("Total Memory: %lu kB\n", pm.system_mem_total());
+      printf("Free  Memory: %lu kB\n", pm.system_mem_free());
+      printf("Overall Memory Usage: %3.2f%%\n", pm.system_mem_usage());
+
+      printf("\n");
+
+      printf("Total Memory of Process %d: %lu kB\n", pid, pm.process_mem_total());
+      printf("Memory Used by Process %d: %lu kB\n", pid, pm.process_mem_used());
+      printf("Process Memory Usage: %3.2f%%\n", pm.process_mem_usage());
+
+      fflush(stdout);
+
+      sleep(2);
    }
 
    pm.stop();
 
    return EXIT_SUCCESS;
 }
-
-// src/lib/net handler

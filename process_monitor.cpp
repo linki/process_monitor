@@ -14,7 +14,7 @@ ProcessMonitor::ProcessMonitor(int pid)
 
 ProcessMonitor::ProcessMonitor(int pid, int interval)
 {
-    initialize(pid, interval, PM_DEFAULT_PROCFS_PATH);
+   initialize(pid, interval, PM_DEFAULT_PROCFS_PATH);
 }
 
 ProcessMonitor::ProcessMonitor(int pid, const char* procfs_path)
@@ -24,7 +24,7 @@ ProcessMonitor::ProcessMonitor(int pid, const char* procfs_path)
 
 ProcessMonitor::ProcessMonitor(int pid, int interval, const char* procfs_path)
 {
-    initialize(pid, interval, procfs_path);
+   initialize(pid, interval, procfs_path);
 }
 
 void ProcessMonitor::initialize(int pid, int interval, const char* procfs_path)
@@ -40,16 +40,21 @@ void ProcessMonitor::initialize(int pid, int interval, const char* procfs_path)
 
    initialize_process_data(&_last_process_data);
    initialize_process_data(&_process_data);
+
+   if (valid_procfs_path())
+   {
+      fetch();
+   }
 }
 
 ProcessMonitor::~ProcessMonitor()
 {
    free(_procfs_path);
-   
+
    // todo
-   free(_last_system_data.cpu);   
-   free(_system_data.cpu);   
-   
+   free(_last_system_data._cpu_data);
+   free(_system_data._cpu_data);
+
    free(_last_process_data._thread_data);
    free(_process_data._thread_data);
 }
@@ -196,26 +201,25 @@ void ProcessMonitor::parse_process_status_file(int pid, memory_data_t* data)
 
 void ProcessMonitor::parse_process_status_stream(FILE* stream, memory_data_t* data)
 {
-   // todo
    char line[64];
 
    while (!feof(stream))
    {
       fgets(line, 64, stream);
-      sscanf(line, "VmPeak: %lu kB\n", &data->vm_peak);
-      sscanf(line, "VmSize: %lu kB\n", &data->vm_size);
-      sscanf(line, "VmRSS: %lu kB\n", &data->vm_rss);
+      sscanf(line, "VmPeak: %lu kB\n", &data->peak);
+      sscanf(line, "VmSize: %lu kB\n", &data->total);
+      sscanf(line, "VmRSS: %lu kB\n", &data->rss);
    }
 }
 
 void ProcessMonitor::parse_system_stat_file(system_data_t* stat)
 {
-   if (stat->cpu_count == 0)
+   if (stat->_cpu_count == 0)
    {
       FILE* stream;
       open_file("stat", &stream);
-      stat->cpu_count = parse_system_stat_stream_for_cpu_count(stream);
-      stat->cpu       = (cpu_data_t*)realloc(stat->cpu, stat->cpu_count * sizeof(cpu_data_t));
+      stat->_cpu_count = parse_system_stat_stream_for_cpu_count(stream);
+      stat->_cpu_data  = (cpu_data_t*)realloc(stat->_cpu_data, stat->_cpu_count * sizeof(cpu_data_t));
       fclose(stream);
    }
 
@@ -249,10 +253,10 @@ void ProcessMonitor::parse_system_stat_stream(FILE* stream, system_data_t* stat_
 
    fgets(line, 64, stream);
    sscanf(line, "cpu %lu %lu %lu %lu %lu %lu %lu %lu %lu",
-          &stat_data->cpus.utime, &stat_data->cpus.nice, &stat_data->cpus.stime, &stat_data->cpus.idle, &stat_data->cpus.iowait,
-          &stat_data->cpus.irq, &stat_data->cpus.softirq, &stat_data->cpus.steal, &stat_data->cpus.guest);
+          &stat_data->_cpus_data.utime, &stat_data->_cpus_data.nice, &stat_data->_cpus_data.stime, &stat_data->_cpus_data.idle, &stat_data->_cpus_data.iowait,
+          &stat_data->_cpus_data.irq, &stat_data->_cpus_data.softirq, &stat_data->_cpus_data.steal, &stat_data->_cpus_data.guest);
 
-   stat_data->cpus.total = stat_data->cpus.utime + stat_data->cpus.stime + stat_data->cpus.idle;
+   stat_data->_cpus_data.total = stat_data->_cpus_data.utime + stat_data->_cpus_data.stime + stat_data->_cpus_data.idle;
 
    int i;
 
@@ -263,15 +267,13 @@ void ProcessMonitor::parse_system_stat_stream(FILE* stream, system_data_t* stat_
       if (sscanf(line, "cpu%d", &i))
       {
          sscanf(line, "cpu%*d %lu %lu %lu %lu %lu %lu %lu %lu %lu",
-                &stat_data->cpu[i].utime, &stat_data->cpu[i].nice, &stat_data->cpu[i].stime, &stat_data->cpu[i].idle, &stat_data->cpu[i].iowait,
-                &stat_data->cpu[i].irq, &stat_data->cpu[i].softirq, &stat_data->cpu[i].steal, &stat_data->cpu[i].guest);
+                &stat_data->_cpu_data[i].utime, &stat_data->_cpu_data[i].nice, &stat_data->_cpu_data[i].stime, &stat_data->_cpu_data[i].idle, &stat_data->_cpu_data[i].iowait,
+                &stat_data->_cpu_data[i].irq, &stat_data->_cpu_data[i].softirq, &stat_data->_cpu_data[i].steal, &stat_data->_cpu_data[i].guest);
 
-         stat_data->cpu[i].total = stat_data->cpu[i].utime + stat_data->cpu[i].stime + stat_data->cpu[i].idle;
+         stat_data->_cpu_data[i].total = stat_data->_cpu_data[i].utime + stat_data->_cpu_data[i].stime + stat_data->_cpu_data[i].idle;
       }
       else
-      {
          break;
-      }
    }
 }
 
@@ -379,15 +381,15 @@ void ProcessMonitor::open_file(int pid, int tid, const char* name, FILE** file)
 
 void ProcessMonitor::copy_system_data(system_data_t* dest_data, system_data_t* src_data)
 {
-   free(dest_data->cpu);
+   free(dest_data->_cpu_data);
 
    *dest_data = *src_data;
 
-   if (src_data->cpu_count > 0)
+   if (src_data->_cpu_count > 0)
    {
-      int bytes = src_data->cpu_count * sizeof(cpu_data_t);
-      dest_data->cpu = (cpu_data_t*)malloc(bytes);
-      memcpy(dest_data->cpu, src_data->cpu, bytes);
+      int bytes = src_data->_cpu_count * sizeof(cpu_data_t);
+      dest_data->_cpu_data = (cpu_data_t*)malloc(bytes);
+      memcpy(dest_data->_cpu_data, src_data->_cpu_data, bytes);
    }
 }
 
@@ -407,8 +409,8 @@ void ProcessMonitor::copy_process_data(process_data_t* dest_data, process_data_t
 
 void ProcessMonitor::initialize_system_data(system_data_t* system_data)
 {
-   system_data->cpu_count = 0;
-   system_data->cpu       = NULL;
+   system_data->_cpu_count = 0;
+   system_data->_cpu_data  = NULL;
 }
 
 void ProcessMonitor::initialize_process_data(process_data_t* process_data)
@@ -438,29 +440,45 @@ char* ProcessMonitor::procfs_path()
    return _procfs_path;
 }
 
+int ProcessMonitor::valid_procfs_path()
+{
+   FILE* stream;
+   char* filename;
+
+   get_path(_pid, "stat", &filename);
+   stream = fopen(filename, "r");
+   free(filename);
+
+   if (stream == NULL)
+      return 0;
+
+   fclose(stream);
+   return 1;
+}
+
 int ProcessMonitor::num_cpus()
 {
-   return _system_data.cpu_count;
+   return _system_data._cpu_count;
 }
 
 unsigned long ProcessMonitor::cpus_jiffies_total()
 {
-  return _system_data.cpus.total;
+   return _system_data._cpus_data.total;
 }
 
 unsigned long ProcessMonitor::cpu_jiffies_total(int cid)
 {
-  return _system_data.cpu[cid].total;
+   return _system_data._cpu_data[cid].total;
 }
 
 unsigned long ProcessMonitor::cpus_jiffies_used()
 {
-  return _system_data.cpus.utime + _system_data.cpus.stime;
+   return _system_data._cpus_data.utime + _system_data._cpus_data.stime;
 }
 
 unsigned long ProcessMonitor::cpu_jiffies_used(int cid)
 {
-  return _system_data.cpu[cid].utime + _system_data.cpu[cid].stime;
+   return _system_data._cpu_data[cid].utime + _system_data._cpu_data[cid].stime;
 }
 
 unsigned long ProcessMonitor::system_mem_total()
@@ -483,72 +501,93 @@ char ProcessMonitor::state()
    return _process_data.state;
 }
 
+char* ProcessMonitor::executable_name()
+{
+   return _process_data.comm;
+}
+
 unsigned long ProcessMonitor::process_mem_total()
 {
-   return _process_data._memory_data.vm_size;
+   return _process_data._memory_data.total;
 }
 
 unsigned long ProcessMonitor::process_mem_used()
 {
-   return _process_data._memory_data.vm_rss;
+   return _process_data._memory_data.rss;
 }
 
 unsigned long ProcessMonitor::process_mem_peak()
 {
-   return _process_data._memory_data.vm_peak;
+   return _process_data._memory_data.peak;
 }
 
 int ProcessMonitor::num_threads()
 {
-  return _process_data.num_threads;
+   return _process_data.num_threads;
 }
 
 double ProcessMonitor::cpus_usage()
 {
-   if (_last_system_data.cpus.total == _system_data.cpus.total) return 0;
+   if (_last_system_data._cpus_data.total == _system_data._cpus_data.total)
+      return 0;
 
-   return (double)(10000 - 10000 * (_system_data.cpus.idle - _last_system_data.cpus.idle) / (_system_data.cpus.total - _last_system_data.cpus.total)) / 100;
+   return (double)(10000 - 10000 * (_system_data._cpus_data.idle - _last_system_data._cpus_data.idle) / (_system_data._cpus_data.total - _last_system_data._cpus_data.total)) / 100;
 }
 
 double ProcessMonitor::cpu_usage(int cid)
 {
-   if (_last_system_data.cpu[cid].total == _system_data.cpu[cid].total) return 0;
+   if (cid >= _last_system_data._cpu_count || cid >= _system_data._cpu_count)
+      return 0;
 
-   return (double)(10000 - 10000 * (_system_data.cpu[cid].idle - _last_system_data.cpu[cid].idle) / (_system_data.cpu[cid].total - _last_system_data.cpu[cid].total)) / 100;
+   if (_last_system_data._cpu_data[cid].total == _system_data._cpu_data[cid].total)
+      return 0;
+
+   return (double)(10000 - 10000 * (_system_data._cpu_data[cid].idle - _last_system_data._cpu_data[cid].idle) / (_system_data._cpu_data[cid].total - _last_system_data._cpu_data[cid].total)) / 100;
 }
 
 double ProcessMonitor::system_mem_usage()
 {
-   if (_system_data._memory_data.total == 0) return 0;
+   if (_system_data._memory_data.total == 0)
+      return 0;
 
-  return (double)(10000 - 10000 * _system_data._memory_data.free / _system_data._memory_data.total) / 100;
+   return (double)(10000 - 10000 * _system_data._memory_data.free / _system_data._memory_data.total) / 100;
 }
 
 double ProcessMonitor::process_mem_usage()
 {
-    if (_system_data._memory_data.total == 0) return 0;
-    
-   return (double)(10000 * _process_data._memory_data.vm_rss / _system_data._memory_data.total) / 100;
+   if (_system_data._memory_data.total == 0)
+      return 0;
+
+   return (double)(10000 * _process_data._memory_data.rss / _system_data._memory_data.total) / 100;
 }
 
 // todo, need correct formula here. check with top
 double ProcessMonitor::process_cpus_usage()
 {
-    if (_last_system_data.cpus.total == _system_data.cpus.total) return 0;
+   if (_last_system_data._cpus_data.total == _system_data._cpus_data.total)
+      return 0;
 
-   return (double)(10000 * (_process_data.total - _last_process_data.total) / (_system_data.cpus.total - _last_system_data.cpus.total)) / 100;
+   return (double)(10000 * (_process_data.total - _last_process_data.total) / (_system_data._cpus_data.total - _last_system_data._cpus_data.total)) / 100;
 }
 
 double ProcessMonitor::thread_cpus_usage(int tid)
 {
-  if (_last_system_data.cpus.total == _system_data.cpus.total) return 0;
+   if (tid >= _last_process_data._thread_count || tid >= _process_data._thread_count)
+      return 0;
 
-  return (double)(10000 * (_process_data._thread_data[tid].total - _last_process_data._thread_data[tid].total) / (_system_data.cpus.total - _last_system_data.cpus.total)) / 100;
+   if (_last_system_data._cpus_data.total == _system_data._cpus_data.total)
+      return 0;
+
+   return (double)(10000 * (_process_data._thread_data[tid].total - _last_process_data._thread_data[tid].total) / (_system_data._cpus_data.total - _last_system_data._cpus_data.total)) / 100;
 }
 
 double ProcessMonitor::process_thread_cpus_usage(int tid)
 {
-   if (_last_process_data.total == _process_data.total) return 0;
+   if (tid >= _last_process_data._thread_count || tid >= _process_data._thread_count)
+      return 0;
+
+   if (_last_process_data.total == _process_data.total)
+      return 0;
 
    return (double)(10000 * (_process_data._thread_data[tid].total - _last_process_data._thread_data[tid].total) / (_process_data.total - _last_process_data.total)) / 100;
 }

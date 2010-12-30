@@ -12,5 +12,8 @@ test: compile
 compile: process_monitor_test.cpp process_monitor.h process_monitor.cpp
 	$(CC) -o process_monitor_test process_monitor_test.cpp process_monitor.h process_monitor.cpp -lgtest -lgtest_main -lpthread -Wall -g
 
+uncrusty:
+	uncrustify -c ../../.uncrustify process_monitor.h process_monitor.cpp main.cpp
+
 clean:
 	rm -f main process_monitor process_monitor_test
