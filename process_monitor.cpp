@@ -9,12 +9,12 @@
 
 ProcessMonitor::ProcessMonitor(int pid)
 {
-   initialize(pid, 2, DEFAULT_PROCFS_PATH);
+   initialize(pid, PM_DEFAULT_INTERVAL, PM_DEFAULT_PROCFS_PATH);
 }
 
 ProcessMonitor::ProcessMonitor(int pid, const char* procfs_path)
 {
-   initialize(pid, 2, procfs_path);
+   initialize(pid, PM_DEFAULT_INTERVAL, procfs_path);
 }
 
 void ProcessMonitor::initialize(int pid, int interval, const char* procfs_path)
@@ -25,16 +25,23 @@ void ProcessMonitor::initialize(int pid, int interval, const char* procfs_path)
    _procfs_path = (char*)malloc(strlen(procfs_path) + 1);
    strcpy(_procfs_path, procfs_path);
 
-   _initialize_system_data(&_last_system_data);
-   _initialize_system_data(&_system_data);
+   initialize_system_data(&_last_system_data);
+   initialize_system_data(&_system_data);
 
-   _initialize_process_data(&_last_process_data);
-   _initialize_process_data(&_process_data);
+   initialize_process_data(&_last_process_data);
+   initialize_process_data(&_process_data);
 }
 
 ProcessMonitor::~ProcessMonitor()
 {
    free(_procfs_path);
+   
+   // todo
+   free(_last_system_data.cpu);   
+   free(_system_data.cpu);   
+   
+   free(_last_process_data._thread_data);
+   free(_process_data._thread_data);
 }
 
 void* ProcessMonitor::run(void* instance)
@@ -185,8 +192,9 @@ void ProcessMonitor::parse_process_status_stream(FILE* stream, memory_data_t* da
    while (!feof(stream))
    {
       fgets(line, 64, stream);
-      sscanf(line, "VmSize: %llu kB\n", &data->vm_size);
-      sscanf(line, "VmRSS: %llu kB\n", &data->vm_rss);
+      sscanf(line, "VmPeak: %lu kB\n", &data->vm_peak);
+      sscanf(line, "VmSize: %lu kB\n", &data->vm_size);
+      sscanf(line, "VmRSS: %lu kB\n", &data->vm_rss);
    }
 }
 
@@ -273,8 +281,8 @@ void ProcessMonitor::parse_meminfo_stream(FILE* stream, meminfo_t* data)
    while (!feof(stream))
    {
       fgets(line, 64, stream);
-      sscanf(line, "MemTotal: %llu kB\n", &data->total);
-      sscanf(line, "MemFree: %llu kB\n", &data->free);
+      sscanf(line, "MemTotal: %lu kB\n", &data->total);
+      sscanf(line, "MemFree: %lu kB\n", &data->free);
    }
 
    data->used = data->total - data->free;
@@ -387,96 +395,22 @@ void ProcessMonitor::copy_process_data(process_data_t* dest_data, process_data_t
    }
 }
 
-void ProcessMonitor::_initialize_system_data(system_data_t* system_data)
+void ProcessMonitor::initialize_system_data(system_data_t* system_data)
 {
    system_data->cpu_count = 0;
    system_data->cpu       = NULL;
 }
 
-void ProcessMonitor::_initialize_process_data(process_data_t* process_data)
+void ProcessMonitor::initialize_process_data(process_data_t* process_data)
 {
    process_data->_thread_count = 0;
    process_data->_thread_data  = NULL;
 }
 
-void ProcessMonitor::_initialize_thread_data(thread_data_t** thread_data, int* thread_count)
+void ProcessMonitor::initialize_thread_data(thread_data_t** thread_data, int* thread_count)
 {
    *thread_count = 0;
    *thread_data  = NULL;
-}
-
-// todo
-double ProcessMonitor::cpu_usage()
-{
-   if (_system_data.cpus.total == _last_system_data.cpus.total)
-   {
-      return 0;
-   }
-
-   return (double)(10000 - 10000 * (_system_data.cpus.idle - _last_system_data.cpus.idle) / (_system_data.cpus.total - _last_system_data.cpus.total)) / 100;
-}
-
-// todo
-double ProcessMonitor::cpu_usage(int cid)
-{
-   if (_system_data.cpu[cid].total == _last_system_data.cpu[cid].total)
-   {
-      return 0;
-   }
-
-   return (double)(10000 - 10000 * (_system_data.cpu[cid].idle - _last_system_data.cpu[cid].idle) / (_system_data.cpu[cid].total - _last_system_data.cpu[cid].total)) / 100;
-}
-
-// todo, need correct formula here
-// todo
-int ProcessMonitor::process_cpu_usage()
-{
-   if (_system_data.cpus.total - _last_system_data.cpus.total == 0)
-   {
-      return 0;
-   }
-
-   return 100 * (_process_data.total - _last_process_data.total) / (_system_data.cpus.total - _last_system_data.cpus.total);
-}
-
-int ProcessMonitor::thread_cpu_usage(int tid)
-{
-   if (_process_data.total - _last_process_data.total == 0)
-   {
-      return 0;
-   }
-
-   return 100 * (_process_data._thread_data[tid].total - _last_process_data._thread_data[tid].total) / (_process_data.total - _last_process_data.total);
-}
-
-int ProcessMonitor::global_thread_cpu_usage(int tid)
-{
-   if (_system_data.cpus.total - _last_system_data.cpus.total == 0)
-   {
-      return 0;
-   }
-
-   return 100 * (_process_data._thread_data[tid].total - _last_process_data._thread_data[tid].total) / (_system_data.cpus.total - _last_system_data.cpus.total);
-}
-
-int ProcessMonitor::cpu_count()
-{
-   return _system_data.cpu_count;
-}
-
-unsigned long ProcessMonitor::cpus()
-{
-   return _system_data.cpus.utime;
-}
-
-unsigned long ProcessMonitor::cpu(int cid)
-{
-   return _system_data.cpu[cid].utime;
-}
-
-int ProcessMonitor::threads()
-{
-   return _process_data._thread_count;
 }
 
 int ProcessMonitor::pid()
@@ -494,14 +428,44 @@ char* ProcessMonitor::procfs_path()
    return _procfs_path;
 }
 
-unsigned long ProcessMonitor::utime()
+int ProcessMonitor::num_cpus()
 {
-   return _process_data.utime;
+   return _system_data.cpu_count;
 }
 
-unsigned long ProcessMonitor::utime(int tid)
+unsigned long ProcessMonitor::cpus_jiffies_total()
 {
-   return _process_data._thread_data[tid].utime;
+  return _system_data.cpus.total;
+}
+
+unsigned long ProcessMonitor::cpu_jiffies_total(int cid)
+{
+  return _system_data.cpu[cid].total;
+}
+
+unsigned long ProcessMonitor::cpus_jiffies_used()
+{
+  return _system_data.cpus.utime + _system_data.cpus.stime;
+}
+
+unsigned long ProcessMonitor::cpu_jiffies_used(int cid)
+{
+  return _system_data.cpu[cid].utime + _system_data.cpu[cid].stime;
+}
+
+unsigned long ProcessMonitor::system_mem_total()
+{
+   return _system_data._memory_data.total;
+}
+
+unsigned long ProcessMonitor::system_mem_free()
+{
+   return _system_data._memory_data.free;
+}
+
+unsigned long ProcessMonitor::system_mem_used()
+{
+   return _system_data._memory_data.used;
 }
 
 char ProcessMonitor::state()
@@ -509,22 +473,72 @@ char ProcessMonitor::state()
    return _process_data.state;
 }
 
-unsigned long ProcessMonitor::mem_total()
+unsigned long ProcessMonitor::process_mem_total()
 {
-   return _system_data._memory_data.total;
+   return _process_data._memory_data.vm_size;
 }
 
-unsigned long ProcessMonitor::mem_free()
+unsigned long ProcessMonitor::process_mem_used()
 {
-   return _system_data._memory_data.free;
+   return _process_data._memory_data.vm_rss;
 }
 
-int ProcessMonitor::process_mem_usage()
+unsigned long ProcessMonitor::process_mem_peak()
 {
-   return 100 * _process_data._memory_data.vm_rss / _system_data._memory_data.total;
+   return _process_data._memory_data.vm_peak;
 }
 
-int ProcessMonitor::mem_usage()
+int ProcessMonitor::num_threads()
 {
-   return 100 - 100 * _system_data._memory_data.free / _system_data._memory_data.total;
+  return _process_data.num_threads;
+}
+
+double ProcessMonitor::cpus_usage()
+{
+   if (_last_system_data.cpus.total == _system_data.cpus.total) return 0;
+
+   return (double)(10000 - 10000 * (_system_data.cpus.idle - _last_system_data.cpus.idle) / (_system_data.cpus.total - _last_system_data.cpus.total)) / 100;
+}
+
+double ProcessMonitor::cpu_usage(int cid)
+{
+   if (_last_system_data.cpu[cid].total == _system_data.cpu[cid].total) return 0;
+
+   return (double)(10000 - 10000 * (_system_data.cpu[cid].idle - _last_system_data.cpu[cid].idle) / (_system_data.cpu[cid].total - _last_system_data.cpu[cid].total)) / 100;
+}
+
+double ProcessMonitor::system_mem_usage()
+{
+   if (_system_data._memory_data.total == 0) return 0;
+
+  return (double)(10000 - 10000 * _system_data._memory_data.free / _system_data._memory_data.total) / 100;
+}
+
+double ProcessMonitor::process_mem_usage()
+{
+    if (_system_data._memory_data.total == 0) return 0;
+    
+   return (double)(10000 * _process_data._memory_data.vm_rss / _system_data._memory_data.total) / 100;
+}
+
+// todo, need correct formula here. check with top
+double ProcessMonitor::process_cpus_usage()
+{
+    if (_last_system_data.cpus.total == _system_data.cpus.total) return 0;
+
+   return (double)(10000 * (_process_data.total - _last_process_data.total) / (_system_data.cpus.total - _last_system_data.cpus.total)) / 100;
+}
+
+double ProcessMonitor::thread_cpus_usage(int tid)
+{
+  if (_last_system_data.cpus.total == _system_data.cpus.total) return 0;
+
+  return (double)(10000 * (_process_data._thread_data[tid].total - _last_process_data._thread_data[tid].total) / (_system_data.cpus.total - _last_system_data.cpus.total)) / 100;
+}
+
+double ProcessMonitor::process_thread_cpus_usage(int tid)
+{
+   if (_last_process_data.total == _process_data.total) return 0;
+
+   return (double)(10000 * (_process_data._thread_data[tid].total - _last_process_data._thread_data[tid].total) / (_process_data.total - _last_process_data.total)) / 100;
 }

@@ -1,14 +1,16 @@
 #include <stdio.h>
 #include <pthread.h>
 
-#define DEFAULT_PROCFS_PATH    "/proc"
+#define PM_DEFAULT_PROCFS_PATH "/proc"
+#define PM_DEFAULT_INTERVAL    2
 
 // todo change name
 struct memory_data
 {
    // in kbytes
-   unsigned long long vm_size; // VmSize: Virtual memory size
-   unsigned long long vm_rss;  // Resident set size.
+   unsigned long vm_peak; // VmPeak: Peak virtual memory size.
+   unsigned long vm_size; // VmSize: Virtual memory size
+   unsigned long vm_rss;  // Resident set size.
 };
 
 typedef struct memory_data   memory_data_t;
@@ -16,9 +18,9 @@ typedef struct memory_data   memory_data_t;
 struct meminfo
 {
    // in kbytes
-   unsigned long long total; // MemTotal in kB
-   unsigned long long free;  // MemFree in kB
-   unsigned long long used;  // MemTotal - MemFree in kB
+   unsigned long total; // MemTotal in kB
+   unsigned long free;  // MemFree in kB
+   unsigned long used;  // MemTotal - MemFree in kB
 };
 
 typedef struct meminfo   meminfo_t;
@@ -195,38 +197,45 @@ int pid();
 int interval();
 char* procfs_path();
 
-double cpu_usage();
-double cpu_usage(int cid);
+int num_cpus();
 
-int process_cpu_usage();
+// remember start time of processmonitor and scope these values in that timeframe
+// instead of the system start
+unsigned long cpus_jiffies_total();
+unsigned long cpu_jiffies_total(int cid);
+unsigned long cpus_jiffies_used();
+unsigned long cpu_jiffies_used(int cid);
 
-int thread_cpu_usage(int tid);
-int global_thread_cpu_usage(int tid);
-
-int cpu_count();
-
-unsigned long cpus();
-unsigned long cpu(int cid);
-
-int threads();
-
-unsigned long utime();
-unsigned long utime(int tid);
+unsigned long system_mem_total();
+unsigned long system_mem_free();
+unsigned long system_mem_used();
 
 char state();
 
-unsigned long mem_total();
-unsigned long mem_free();
+unsigned long process_mem_total();
+unsigned long process_mem_used();
+unsigned long process_mem_peak();
 
-int process_mem_usage();
-int mem_usage();
+int num_threads();
+
+double cpus_usage();
+double cpu_usage(int cid);
+
+double system_mem_usage();
+double process_mem_usage();
+
+double process_cpus_usage();
+
+double thread_cpus_usage(int tid);
+double process_thread_cpus_usage(int tid);
 
 void copy_system_data(system_data_t* dest_data, system_data_t* src_data);
 void copy_process_data(process_data_t* dest_data, process_data_t* src_data);
 
-static void _initialize_system_data(system_data_t* system_data);
-static void _initialize_process_data(process_data_t* process_data);
-static void _initialize_thread_data(thread_data_t** thread_data, int* thread_count);
+static void initialize_system_data(system_data_t* system_data);
+static void initialize_process_data(process_data_t* process_data);
+static void initialize_thread_data(thread_data_t** thread_data, int* thread_count);
+
 };
 
 /*
