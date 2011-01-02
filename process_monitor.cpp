@@ -529,9 +529,6 @@ int ProcessMonitor::num_threads()
 
 double ProcessMonitor::cpus_usage()
 {
-   if (cid >= _last_system_data._cpu_count || cid >= _system_data._cpu_count)
-      return 0;
-
    if (_last_system_data._cpus_data.total == _system_data._cpus_data.total)
       return 0;
 
