@@ -417,6 +417,7 @@ void ProcessMonitor::initialize_process_data(process_data_t* process_data)
 {
    process_data->_thread_count = 0;
    process_data->_thread_data  = NULL;
+   process_data->total = 0;
 }
 
 void ProcessMonitor::initialize_thread_data(thread_data_t** thread_data, int* thread_count)
@@ -528,6 +529,9 @@ int ProcessMonitor::num_threads()
 
 double ProcessMonitor::cpus_usage()
 {
+   if (cid >= _last_system_data._cpu_count || cid >= _system_data._cpu_count)
+      return 0;
+
    if (_last_system_data._cpus_data.total == _system_data._cpus_data.total)
       return 0;
 
