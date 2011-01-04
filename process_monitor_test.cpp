@@ -309,9 +309,11 @@ TEST(ProcessMonitor, InitializePidAndDefaultValues)
    ProcessMonitor pm(42);
 
    EXPECT_EQ(42, pm.pid());
-   EXPECT_EQ(2,  pm.interval());
+   EXPECT_EQ( 2, pm.interval());
    
    EXPECT_STREQ("/proc", pm.procfs_path());
+   
+   EXPECT_FALSE(pm.is_running());
 }
 
 TEST(ProcessMonitor, InitializeWithDifferentProcfsPath)
@@ -335,13 +337,25 @@ TEST(ProcessMonitor, InitializeWithDifferentIntervalAndProcfs)
 TEST(ProcessMonitor, CheckProcfsPath)
 {
     ProcessMonitor pm1(42, "test/proc");
-    EXPECT_TRUE(pm1.valid_procfs_path());
+    EXPECT_TRUE(pm1.has_valid_procfs_path());
     
     ProcessMonitor pm2(42, "/some/other/procfs/path");
-    EXPECT_FALSE(pm2.valid_procfs_path());
+    EXPECT_FALSE(pm2.has_valid_procfs_path());
     
     ProcessMonitor pm3(69, "test/proc");
-    EXPECT_FALSE(pm3.valid_procfs_path());
+    EXPECT_FALSE(pm3.has_valid_procfs_path());
+}
+
+TEST(ProcessMonitor, SetRunning)
+{
+    ProcessMonitor pm(42, "test/proc");
+    EXPECT_FALSE(pm.is_running());
+    
+    pm.start();
+    EXPECT_TRUE(pm.is_running());
+    
+    pm.stop();    
+    EXPECT_FALSE(pm.is_running());        
 }
 
 TEST(ProcessMonitor, FetchUpdatesProcessAndSystemData)
@@ -377,23 +391,39 @@ TEST(ProcessMonitor, ComputeCorrectProcfsPaths)
 
    char * system_stat_path;
    char * process_stat_path;
+   char * other_process_stat_path;
    char * process_status_path;
    char * thread_stat_path;
 
-   pm.get_path("stat", &system_stat_path);
-   pm.get_path(42, "stat", &process_stat_path);
-   pm.get_path(42, "status", &process_status_path);
-   pm.get_path(42, 1732, "stat", &thread_stat_path);
+   ProcessMonitor::get_path("/proc", "stat", &system_stat_path);
+   ProcessMonitor::get_path("/proc", 42, "stat", &process_stat_path);
+   ProcessMonitor::get_path("other/proc", 42, "stat", &other_process_stat_path);
+   ProcessMonitor::get_path("/proc", 42, "status", &process_status_path);
+   ProcessMonitor::get_path("/proc", 42, 1732, "stat", &thread_stat_path);
 
    EXPECT_STREQ("/proc/stat", system_stat_path);
    EXPECT_STREQ("/proc/42/stat", process_stat_path);
+   EXPECT_STREQ("other/proc/42/stat", other_process_stat_path);
    EXPECT_STREQ("/proc/42/status", process_status_path);
    EXPECT_STREQ("/proc/42/task/1732/stat", thread_stat_path);
 
    free(system_stat_path);
    free(process_stat_path);
+   free(other_process_stat_path);
    free(process_status_path);
    free(thread_stat_path);
+}
+
+TEST(ProcessMonitor, AssignCorrectFilePaths)
+{
+   ProcessMonitor pm(42, "/proc");
+   
+   EXPECT_STREQ("/proc/stat", pm._system_stat_path);
+   EXPECT_STREQ("/proc/meminfo", pm._system_meminfo_path);   
+   
+   EXPECT_STREQ("/proc/42/stat", pm._process_stat_path);
+   EXPECT_STREQ("/proc/42/status", pm._process_status_path);
+   EXPECT_STREQ("/proc/42/task", pm._process_task_path);
 }
 
 TEST(ProcessMonitor, ParseCorrectThreadIdsFromTaskFolder)
@@ -424,15 +454,15 @@ TEST(ProcessMonitor, AccessorsReturnTheCorrectValues)
    // system
    EXPECT_EQ(12, pm.num_cpus());
    
-   EXPECT_EQ(4611536, pm.cpus_jiffies_total());
-   EXPECT_EQ( 382549, pm.cpu_jiffies_total(0));
-   EXPECT_EQ( 384465, pm.cpu_jiffies_total(5));
-   EXPECT_EQ( 384606, pm.cpu_jiffies_total(11));
+   EXPECT_EQ(4611536, pm.cpus_clock_ticks_total());
+   EXPECT_EQ( 382549, pm.cpu_clock_ticks_total(0));
+   EXPECT_EQ( 384465, pm.cpu_clock_ticks_total(5));
+   EXPECT_EQ( 384606, pm.cpu_clock_ticks_total(11));
 
-   EXPECT_EQ(5279, pm.cpus_jiffies_used());
-   EXPECT_EQ( 688, pm.cpu_jiffies_used(0));
-   EXPECT_EQ( 172, pm.cpu_jiffies_used(5));
-   EXPECT_EQ( 156, pm.cpu_jiffies_used(11));
+   EXPECT_EQ(5279, pm.cpus_clock_ticks_used());
+   EXPECT_EQ( 688, pm.cpu_clock_ticks_used(0));
+   EXPECT_EQ( 172, pm.cpu_clock_ticks_used(5));
+   EXPECT_EQ( 156, pm.cpu_clock_ticks_used(11));
    
    EXPECT_EQ(49550504, pm.system_mem_total());
    EXPECT_EQ(47442424, pm.system_mem_free());
@@ -509,13 +539,13 @@ TEST(ProcessMonitor, ComputeCorrectThreadCPUUsage)
    pm._last_process_data._thread_data = (thread_data_t*)malloc(2 * sizeof(thread_data_t));
    pm._process_data._thread_data      = (thread_data_t*)malloc(2 * sizeof(thread_data_t));   
 
-   pm._last_system_data._cpus_data.total             = 100;
+   pm._last_system_data._cpus_data.total       = 100;
    pm._last_process_data.total                 = 200;
    pm._last_process_data._thread_count         =   2;
    pm._last_process_data._thread_data[0].total = 100;
    pm._last_process_data._thread_data[1].total =  50;   
 
-   pm._system_data._cpus_data.total             = 440;
+   pm._system_data._cpus_data.total       = 440;
    pm._process_data.total                 = 510;
    pm._process_data._thread_count         =   2;   
    pm._process_data._thread_data[0].total = 175;
@@ -563,18 +593,6 @@ TEST(ProcessMonitor, ParseProcessThreadStat)
    EXPECT_THREAD_STAT_1732(stat_data);
 }
 
-// // measured in pages
-// TEST(ProcessMonitor, ParseProcessStatm)
-// {
-//     ProcessMonitor* pm = new ProcessMonitor(42);
-//     pm.procfs_path("test/proc");
-//
-//     process_datam_t data;
-//     pm.parse_process_statm_file(42, &data);
-//
-//     EXPECT_PROCESS_STATM_42(data);
-// }
-
 TEST(ProcessMonitor, ParseProcessStatus)
 {
    ProcessMonitor pm(42, "test/proc");
@@ -594,16 +612,9 @@ TEST(ProcessMonitor, ParseSystemMeminfo)
 
    pm.parse_system_meminfo_file(&data);
 
-   EXPECT_EQ(49550504, data.total); // kb
-   EXPECT_EQ(47442424, data.free);  //kb
-   EXPECT_EQ(2108080, data.used);   //kb
-
-
-
-
-   // mem_usage is missing
-
-   // VmRSS / MemTotal = Memory Usage laut top
+   EXPECT_EQ(49550504, data.total);
+   EXPECT_EQ(47442424, data.free);
+   EXPECT_EQ(2108080, data.used);
 }
 
 TEST(ProcessMonitor, ParseLoadAvg)
@@ -627,32 +638,23 @@ TEST(ProcessMonitor, ParseLoadAvg)
    EXPECT_EQ(3848, last);
 }
 
-
-
-
-
-
-
 TEST(ProcessMonitor, ParseSystemData)
 {
    ProcessMonitor pm(42, "test/proc");
 
-   // allocate before
    system_data_t system_data;
 
    ProcessMonitor::initialize_system_data(&system_data);
 
-   pm.parse_system_stat_file(&system_data);
+   pm.parse_system_data(&system_data);
 
    EXPECT_SYSTEM_CPUS(system_data._cpus_data);
    EXPECT_SYSTEM_CPU_0(system_data._cpu_data[0]);
    EXPECT_SYSTEM_CPU_5(system_data._cpu_data[5]);
    EXPECT_SYSTEM_CPU_11(system_data._cpu_data[11]);
+   
+   EXPECT_SYSTEM_MEMINFO(system_data._memory_data);
 }
-
-
-
-
 
 TEST(ProcessMonitor, ParseProcessDataWithThreadsAndMemory)
 {
@@ -727,16 +729,13 @@ TEST(ProcessMonitor, CopySystemdata)
 {
    ProcessMonitor pm(42, "test/proc");
 
-   // allocate before
    system_data_t src_data;
    system_data_t dest_data;
 
    ProcessMonitor::initialize_system_data(&src_data);
    ProcessMonitor::initialize_system_data(&dest_data);
 
-   pm.parse_system_stat_file(&src_data);
-   pm.parse_system_meminfo_file(&src_data._memory_data);
-
+   pm.parse_system_data(&src_data);
    pm.copy_system_data(&dest_data, &src_data);
 
    src_data._cpu_count          = 0;
@@ -753,7 +752,7 @@ TEST(ProcessMonitor, CopySystemdata)
    EXPECT_SYSTEM_CPU_5(dest_data._cpu_data[5]);
    EXPECT_SYSTEM_CPU_11(dest_data._cpu_data[11]);
 
-   EXPECT_EQ(49550504, dest_data._memory_data.total);
+   EXPECT_SYSTEM_MEMINFO(dest_data._memory_data);
 }
 
 TEST(ProcessMonitor, RememberLastFetch)
@@ -799,6 +798,7 @@ TEST(ProcessMonitor, InitProcessData)
 
    EXPECT_EQ(0, process_data._thread_count);
    EXPECT_EQ(NULL, process_data._thread_data);
+   EXPECT_EQ(0, process_data.total);
 }
 
 TEST(ProcessMonitor, InitThreadData)

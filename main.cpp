@@ -20,7 +20,7 @@ int main(int argc, const char* argv[])
 
    ProcessMonitor pm(pid);
 
-   if (!pm.valid_procfs_path())
+   if (!pm.has_valid_procfs_path())
    {
       printf("ERROR: invalid procfs path or process id\n");
       exit(EXIT_FAILURE);
@@ -28,7 +28,7 @@ int main(int argc, const char* argv[])
 
    pm.start();
 
-   while (1)
+   while (pm.is_running())
    {
       printf("\033[2J");            // clear screen
       printf("\033[%d;%dH", 0, 0);  // cursor to 0, 0

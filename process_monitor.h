@@ -118,11 +118,12 @@ struct process_data
 
 class ProcessMonitor
 {
-pthread_t _runner;
-
 int       _pid;
 int       _interval;
 char      * _procfs_path;
+
+pthread_t _runner;
+int       _running;
 
 void initialize(int pid, int interval, const char* procfs_path);
 
@@ -133,6 +134,12 @@ system_data_t  _last_system_data;
 
 process_data_t _process_data;
 process_data_t _last_process_data;
+
+char           * _system_stat_path;
+char           * _system_meminfo_path;
+char           * _process_stat_path;
+char           * _process_status_path;
+char           * _process_task_path;
 
 // constructors take pid, interval and path to procfs
 explicit ProcessMonitor(int pid);
@@ -152,15 +159,17 @@ void stop();
 int pid();
 int interval();
 char* procfs_path();
-int valid_procfs_path();
+int has_valid_procfs_path();
+int is_running();
 int num_cpus();
+int num_threads();
 
 // remember start time of processmonitor and scope these values in that timeframe
 // instead of the system start
-unsigned long cpus_jiffies_total();
-unsigned long cpu_jiffies_total(int cid);
-unsigned long cpus_jiffies_used();
-unsigned long cpu_jiffies_used(int cid);
+unsigned long cpus_clock_ticks_total();
+unsigned long cpu_clock_ticks_total(int cid);
+unsigned long cpus_clock_ticks_used();
+unsigned long cpu_clock_ticks_used(int cid);
 
 unsigned long system_mem_total();
 unsigned long system_mem_free();
@@ -172,8 +181,6 @@ char* executable_name();
 unsigned long process_mem_total();
 unsigned long process_mem_used();
 unsigned long process_mem_peak();
-
-int num_threads();
 
 double cpus_usage();
 double cpu_usage(int cid);
@@ -188,16 +195,6 @@ double process_thread_cpus_usage(int tid);
 
 // thread loop
 static void* run(void* data);
-
-// path helpers
-void get_path(const char* name, char** path);
-void get_path(int pid, const char* name, char** path);
-void get_path(int pid, int tid, const char* name, char** path);
-
-// file helpers
-void open_file(const char* name, FILE** file);
-void open_file(int pid, const char* name, FILE** file);
-void open_file(int pid, int tid, const char* name, FILE** file);
 
 // parsing
 void parse_system_data(system_data_t* system_data);
@@ -221,9 +218,14 @@ int parse_system_stat_stream_for_cpu_count(FILE* stream);
 
 int parse_process_thread_ids(int pid, int** ptids);
 
-// private
-void copy_system_data(system_data_t* dest_data, system_data_t* src_data);
-void copy_process_data(process_data_t* dest_data, process_data_t* src_data);
+// copy helpers
+static void copy_system_data(system_data_t* dest_data, system_data_t* src_data);
+static void copy_process_data(process_data_t* dest_data, process_data_t* src_data);
+
+// path helpers
+static void get_path(const char* procfs_path, const char* name, char** path);
+static void get_path(const char* procfs_path, int pid, const char* name, char** path);
+static void get_path(const char* procfs_path, int pid, int tid, const char* name, char** path);
 
 // initializers
 static void initialize_system_data(system_data_t* system_data);

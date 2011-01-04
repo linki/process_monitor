@@ -31,9 +31,16 @@ void ProcessMonitor::initialize(int pid, int interval, const char* procfs_path)
 {
    _pid      = pid;
    _interval = interval;
+   _running  = 0;
 
    _procfs_path = (char*)malloc(strlen(procfs_path) + 1);
    strcpy(_procfs_path, procfs_path);
+
+   get_path(_procfs_path, "stat", &_system_stat_path);
+   get_path(_procfs_path, "meminfo", &_system_meminfo_path);
+   get_path(_procfs_path, _pid, "stat", &_process_stat_path);
+   get_path(_procfs_path, _pid, "status", &_process_status_path);
+   get_path(_procfs_path, _pid, "task", &_process_task_path);
 
    initialize_system_data(&_last_system_data);
    initialize_system_data(&_system_data);
@@ -41,7 +48,7 @@ void ProcessMonitor::initialize(int pid, int interval, const char* procfs_path)
    initialize_process_data(&_last_process_data);
    initialize_process_data(&_process_data);
 
-   if (valid_procfs_path())
+   if (has_valid_procfs_path())
    {
       fetch();
    }
@@ -50,6 +57,12 @@ void ProcessMonitor::initialize(int pid, int interval, const char* procfs_path)
 ProcessMonitor::~ProcessMonitor()
 {
    free(_procfs_path);
+
+   free(_system_stat_path);
+   free(_system_meminfo_path);
+   free(_process_stat_path);
+   free(_process_status_path);
+   free(_process_task_path);
 
    // todo
    free(_last_system_data._cpu_data);
@@ -69,7 +82,7 @@ void* ProcessMonitor::run(void* instance)
 
    ProcessMonitor* pm = (ProcessMonitor*)instance;
 
-   while (true)
+   while (1)
    {
       pm->fetch();
       sleep(pm->interval());
@@ -94,6 +107,8 @@ void ProcessMonitor::start()
    }
 
    pthread_attr_destroy(&attr);
+
+   _running = 1;
 }
 
 void ProcessMonitor::stop()
@@ -107,6 +122,8 @@ void ProcessMonitor::stop()
       printf("ERROR: return code from pthread_join() is %d\n", status);
       exit(EXIT_FAILURE);
    }
+
+   _running = 0;
 }
 
 void ProcessMonitor::fetch()
@@ -160,20 +177,23 @@ void ProcessMonitor::parse_thread(int pid, int tid, thread_data_t* thread_data)
 
 void ProcessMonitor::parse_process_stat_file(int pid, process_data_t* stat)
 {
-   FILE* stream;
+   FILE* file = fopen(_process_stat_path, "r");
 
-   open_file(pid, "stat", &stream);
-   parse_process_stat_stream(stream, stat);
-   fclose(stream);
+   parse_process_stat_stream(file, stat);
+   fclose(file);
 }
 
 void ProcessMonitor::parse_thread_stat_file(int pid, int tid, thread_data_t* stat)
 {
-   FILE* stream;
+   char* filename;
 
-   open_file(pid, tid, "stat", &stream);
-   parse_process_stat_stream(stream, stat);
-   fclose(stream);
+   get_path(_procfs_path, pid, tid, "stat", &filename);
+
+   FILE* file = fopen(filename, "r");
+   parse_process_stat_stream(file, stat);
+   fclose(file);
+
+   free(filename);
 }
 
 void ProcessMonitor::parse_process_stat_stream(FILE* stream, process_data_t* stat)
@@ -192,11 +212,10 @@ void ProcessMonitor::parse_process_stat_stream(FILE* stream, process_data_t* sta
 
 void ProcessMonitor::parse_process_status_file(int pid, memory_data_t* data)
 {
-   FILE* stream;
+   FILE* file = fopen(_process_status_path, "r");
 
-   open_file(pid, "status", &stream);
-   parse_process_status_stream(stream, data);
-   fclose(stream);
+   parse_process_status_stream(file, data);
+   fclose(file);
 }
 
 void ProcessMonitor::parse_process_status_stream(FILE* stream, memory_data_t* data)
@@ -216,17 +235,15 @@ void ProcessMonitor::parse_system_stat_file(system_data_t* stat)
 {
    if (stat->_cpu_count == 0)
    {
-      FILE* stream;
-      open_file("stat", &stream);
-      stat->_cpu_count = parse_system_stat_stream_for_cpu_count(stream);
+      FILE* file = fopen(_system_stat_path, "r");
+      stat->_cpu_count = parse_system_stat_stream_for_cpu_count(file);
       stat->_cpu_data  = (cpu_data_t*)realloc(stat->_cpu_data, stat->_cpu_count * sizeof(cpu_data_t));
-      fclose(stream);
+      fclose(file);
    }
 
-   FILE* stream;
-   open_file("stat", &stream);
-   parse_system_stat_stream(stream, stat);
-   fclose(stream);
+   FILE* file = fopen(_system_stat_path, "r");
+   parse_system_stat_stream(file, stat);
+   fclose(file);
 }
 
 int ProcessMonitor::parse_system_stat_stream_for_cpu_count(FILE* stream)
@@ -279,11 +296,10 @@ void ProcessMonitor::parse_system_stat_stream(FILE* stream, system_data_t* stat_
 
 void ProcessMonitor::parse_system_meminfo_file(meminfo_t* data)
 {
-   FILE* stream;
+   FILE* file = fopen(_system_meminfo_path, "r");
 
-   open_file("meminfo", &stream);
-   parse_meminfo_stream(stream, data);
-   fclose(stream);
+   parse_meminfo_stream(file, data);
+   fclose(file);
 }
 
 void ProcessMonitor::parse_meminfo_stream(FILE* stream, meminfo_t* data)
@@ -303,11 +319,9 @@ void ProcessMonitor::parse_meminfo_stream(FILE* stream, meminfo_t* data)
 int ProcessMonitor::parse_process_thread_ids(int pid, int** ptids)
 {
    struct dirent **folders;
-   char          * task_path;
+   int           tcnt;
 
-   get_path(pid, "task", &task_path);
-
-   int tcnt = scandir(task_path, &folders, NULL, alphasort) - 2;
+   tcnt = scandir(_process_task_path, &folders, NULL, alphasort) - 2;
 
    *ptids = (int*)malloc(tcnt * sizeof(int));
 
@@ -323,60 +337,7 @@ int ProcessMonitor::parse_process_thread_ids(int pid, int** ptids)
 
    free(folders);
 
-   free(task_path);
-
    return tcnt;
-}
-
-void ProcessMonitor::get_path(const char* name, char** path)
-{
-   int length = strlen(_procfs_path) + 1 + strlen(name) + 1;  // todo
-
-   *path = (char*)malloc(length);
-   snprintf(*path, length, "%s/%s", _procfs_path, name);
-}
-
-void ProcessMonitor::get_path(int pid, const char* name, char** path)
-{
-   int length = strlen(_procfs_path) + 1 + 5 + 1 + strlen(name) + 1;  // todo
-
-   *path = (char*)malloc(length);
-   snprintf(*path, length, "%s/%d/%s", _procfs_path, pid, name);
-}
-
-void ProcessMonitor::get_path(int pid, int tid, const char* name, char** path)
-{
-   int length = strlen(_procfs_path) + 1 + 5 + 1 + 4 + 1 + 5 + 1 + strlen(name) + 1;  // todo
-
-   *path = (char*)malloc(length);
-   snprintf(*path, length, "%s/%d/task/%d/%s", _procfs_path, pid, tid, name);
-}
-
-void ProcessMonitor::open_file(const char* name, FILE** file)
-{
-   char* filename;
-
-   get_path(name, &filename);
-   *file = fopen(filename, "r");
-   free(filename);
-}
-
-void ProcessMonitor::open_file(int pid, const char* name, FILE** file)
-{
-   char* filename;
-
-   get_path(pid, name, &filename);
-   *file = fopen(filename, "r");
-   free(filename);
-}
-
-void ProcessMonitor::open_file(int pid, int tid, const char* name, FILE** file)
-{
-   char* filename;
-
-   get_path(pid, tid, name, &filename);
-   *file = fopen(filename, "r");
-   free(filename);
 }
 
 void ProcessMonitor::copy_system_data(system_data_t* dest_data, system_data_t* src_data)
@@ -407,6 +368,30 @@ void ProcessMonitor::copy_process_data(process_data_t* dest_data, process_data_t
    }
 }
 
+void ProcessMonitor::get_path(const char* procfs_path, const char* name, char** path)
+{
+   int length = strlen(procfs_path) + 1 + strlen(name) + 1;  // todo
+
+   *path = (char*)malloc(length);
+   snprintf(*path, length, "%s/%s", procfs_path, name);
+}
+
+void ProcessMonitor::get_path(const char* procfs_path, int pid, const char* name, char** path)
+{
+   int length = strlen(procfs_path) + 1 + 5 + 1 + strlen(name) + 1;  // todo
+
+   *path = (char*)malloc(length);
+   snprintf(*path, length, "%s/%d/%s", procfs_path, pid, name);
+}
+
+void ProcessMonitor::get_path(const char* procfs_path, int pid, int tid, const char* name, char** path)
+{
+   int length = strlen(procfs_path) + 1 + 5 + 1 + 4 + 1 + 5 + 1 + strlen(name) + 1;  // todo
+
+   *path = (char*)malloc(length);
+   snprintf(*path, length, "%s/%d/task/%d/%s", procfs_path, pid, tid, name);
+}
+
 void ProcessMonitor::initialize_system_data(system_data_t* system_data)
 {
    system_data->_cpu_count = 0;
@@ -417,7 +402,7 @@ void ProcessMonitor::initialize_process_data(process_data_t* process_data)
 {
    process_data->_thread_count = 0;
    process_data->_thread_data  = NULL;
-   process_data->total = 0;
+   process_data->total         = 0;
 }
 
 void ProcessMonitor::initialize_thread_data(thread_data_t** thread_data, int* thread_count)
@@ -441,20 +426,24 @@ char* ProcessMonitor::procfs_path()
    return _procfs_path;
 }
 
-int ProcessMonitor::valid_procfs_path()
+int ProcessMonitor::has_valid_procfs_path()
 {
-   FILE* stream;
-   char* filename;
+   FILE* file = fopen(_process_stat_path, "r");
 
-   get_path(_pid, "stat", &filename);
-   stream = fopen(filename, "r");
-   free(filename);
-
-   if (stream == NULL)
+   if (file == NULL)
+   {
       return 0;
+   }
+   else
+   {
+      fclose(file);
+      return 1;
+   }
+}
 
-   fclose(stream);
-   return 1;
+int ProcessMonitor::is_running()
+{
+   return _running;
 }
 
 int ProcessMonitor::num_cpus()
@@ -462,22 +451,22 @@ int ProcessMonitor::num_cpus()
    return _system_data._cpu_count;
 }
 
-unsigned long ProcessMonitor::cpus_jiffies_total()
+unsigned long ProcessMonitor::cpus_clock_ticks_total()
 {
    return _system_data._cpus_data.total;
 }
 
-unsigned long ProcessMonitor::cpu_jiffies_total(int cid)
+unsigned long ProcessMonitor::cpu_clock_ticks_total(int cid)
 {
    return _system_data._cpu_data[cid].total;
 }
 
-unsigned long ProcessMonitor::cpus_jiffies_used()
+unsigned long ProcessMonitor::cpus_clock_ticks_used()
 {
    return _system_data._cpus_data.utime + _system_data._cpus_data.stime;
 }
 
-unsigned long ProcessMonitor::cpu_jiffies_used(int cid)
+unsigned long ProcessMonitor::cpu_clock_ticks_used(int cid)
 {
    return _system_data._cpu_data[cid].utime + _system_data._cpu_data[cid].stime;
 }
