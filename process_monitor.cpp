@@ -394,15 +394,12 @@ void ProcessMonitor::get_path(const char* procfs_path, int pid, int tid, const c
 
 void ProcessMonitor::initialize_system_data(system_data_t* system_data)
 {
-   system_data->_cpu_count = 0;
-   system_data->_cpu_data  = NULL;
+   memset(system_data, 0, sizeof(system_data_t));
 }
 
 void ProcessMonitor::initialize_process_data(process_data_t* process_data)
 {
-   process_data->_thread_count = 0;
-   process_data->_thread_data  = NULL;
-   process_data->total         = 0;
+   memset(process_data, 0, sizeof(process_data_t));   
 }
 
 void ProcessMonitor::initialize_thread_data(thread_data_t** thread_data, int* thread_count)
