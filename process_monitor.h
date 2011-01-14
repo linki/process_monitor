@@ -118,6 +118,8 @@ struct process_data
 
 class ProcessMonitor
 {
+public:
+
 int       _pid;
 int       _interval;
 char      * _procfs_path;
@@ -126,8 +128,6 @@ pthread_t _runner;
 int       _running;
 
 void initialize(int pid, int interval, const char* procfs_path);
-
-public:
 
 system_data_t  _system_data;
 system_data_t  _last_system_data;
@@ -151,7 +151,7 @@ explicit ProcessMonitor(int pid, int interval, const char* procfs_path);
 ~ProcessMonitor();
 
 // control
-void fetch();
+int fetch();
 void start();
 void stop();
 

@@ -70,7 +70,7 @@ int main(int argc, const char* argv[])
       sleep(2);
    }
 
-   pm.stop();
+   printf("\nProcess exited.\n\n");
 
    return EXIT_SUCCESS;
 }

@@ -48,10 +48,7 @@ void ProcessMonitor::initialize(int pid, int interval, const char* procfs_path)
    initialize_process_data(&_last_process_data);
    initialize_process_data(&_process_data);
 
-   if (has_valid_procfs_path())
-   {
-      fetch();
-   }
+   fetch();
 }
 
 ProcessMonitor::~ProcessMonitor()
@@ -84,8 +81,15 @@ void* ProcessMonitor::run(void* instance)
 
    while (1)
    {
-      pm->fetch();
-      sleep(pm->interval());
+      if (pm->fetch())
+      {
+         sleep(pm->interval());
+      }
+      else
+      {
+         pm->_running = 0;
+         break;
+      }
    }
 
    pthread_exit(NULL);
@@ -126,13 +130,20 @@ void ProcessMonitor::stop()
    _running = 0;
 }
 
-void ProcessMonitor::fetch()
+int ProcessMonitor::fetch()
 {
+   if (!has_valid_procfs_path())
+   {
+      return 0;
+   }
+
    copy_system_data(&_last_system_data, &_system_data);
    copy_process_data(&_last_process_data, &_process_data);
 
    parse_system_data(&_system_data);
    parse_process_data(_pid, &_process_data);
+
+   return 1;
 }
 
 void ProcessMonitor::parse_system_data(system_data_t* system_data)
@@ -222,13 +233,13 @@ void ProcessMonitor::parse_process_status_stream(FILE* stream, memory_data_t* da
 {
    char line[64];
 
-   while (!feof(stream))
+   while (fgets(line, 64, stream))
    {
-      fgets(line, 64, stream);
       sscanf(line, "VmPeak: %lu kB\n", &data->peak);
       sscanf(line, "VmSize: %lu kB\n", &data->total);
       sscanf(line, "VmRSS: %lu kB\n", &data->rss);
    }
+   ;
 }
 
 void ProcessMonitor::parse_system_stat_file(system_data_t* stat)
@@ -255,11 +266,11 @@ int ProcessMonitor::parse_system_stat_stream_for_cpu_count(FILE* stream)
 
    int i;
 
-   while (!feof(stream))
+   while (fgets(line, 64, stream))
    {
-      fgets(line, 64, stream);
       sscanf(line, "cpu%d", &i);
    }
+   ;
 
    return i + 1;
 }
@@ -277,10 +288,8 @@ void ProcessMonitor::parse_system_stat_stream(FILE* stream, system_data_t* stat_
 
    int i;
 
-   while (!feof(stream))
+   while (fgets(line, 64, stream))
    {
-      fgets(line, 64, stream);
-
       if (sscanf(line, "cpu%d", &i))
       {
          sscanf(line, "cpu%*d %lu %lu %lu %lu %lu %lu %lu %lu %lu",
@@ -292,6 +301,7 @@ void ProcessMonitor::parse_system_stat_stream(FILE* stream, system_data_t* stat_
       else
          break;
    }
+   ;
 }
 
 void ProcessMonitor::parse_system_meminfo_file(meminfo_t* data)
@@ -306,12 +316,12 @@ void ProcessMonitor::parse_meminfo_stream(FILE* stream, meminfo_t* data)
 {
    char line[64];
 
-   while (!feof(stream))
+   while (fgets(line, 64, stream))
    {
-      fgets(line, 64, stream);
       sscanf(line, "MemTotal: %lu kB\n", &data->total);
       sscanf(line, "MemFree: %lu kB\n", &data->free);
    }
+   ;
 
    data->used = data->total - data->free;
 }
@@ -399,7 +409,7 @@ void ProcessMonitor::initialize_system_data(system_data_t* system_data)
 
 void ProcessMonitor::initialize_process_data(process_data_t* process_data)
 {
-   memset(process_data, 0, sizeof(process_data_t));   
+   memset(process_data, 0, sizeof(process_data_t));
 }
 
 void ProcessMonitor::initialize_thread_data(thread_data_t** thread_data, int* thread_count)
