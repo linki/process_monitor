@@ -223,9 +223,9 @@ static void copy_system_data(system_data_t* dest_data, system_data_t* src_data);
 static void copy_process_data(process_data_t* dest_data, process_data_t* src_data);
 
 // path helpers
-static void get_path(const char* procfs_path, const char* name, char** path);
-static void get_path(const char* procfs_path, int pid, const char* name, char** path);
-static void get_path(const char* procfs_path, int pid, int tid, const char* name, char** path);
+static char* path_to(const char* procfs_path, const char* name);
+static char* path_to(const char* procfs_path, int pid, const char* name);
+static char* path_to(const char* procfs_path, int pid, int tid, const char* name);
 
 // initializers
 static void initialize_system_data(system_data_t* system_data);

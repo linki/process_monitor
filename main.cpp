@@ -14,7 +14,7 @@ int main(int argc, const char* argv[])
    }
    else
    {
-      printf("USAGE: %s PID\n", argv[0]);
+      fprintf(stderr, "USAGE: %s PID\n", argv[0]);
       exit(EXIT_FAILURE);
    }
 
@@ -22,7 +22,7 @@ int main(int argc, const char* argv[])
 
    if (!pm.has_valid_procfs_path())
    {
-      printf("ERROR: invalid procfs path or process id\n");
+      fprintf(stderr, "ERROR: invalid procfs path or process id\n");
       exit(EXIT_FAILURE);
    }
 

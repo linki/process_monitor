@@ -36,11 +36,11 @@ void ProcessMonitor::initialize(int pid, int interval, const char* procfs_path)
    _procfs_path = (char*)malloc(strlen(procfs_path) + 1);
    strcpy(_procfs_path, procfs_path);
 
-   get_path(_procfs_path, "stat", &_system_stat_path);
-   get_path(_procfs_path, "meminfo", &_system_meminfo_path);
-   get_path(_procfs_path, _pid, "stat", &_process_stat_path);
-   get_path(_procfs_path, _pid, "status", &_process_status_path);
-   get_path(_procfs_path, _pid, "task", &_process_task_path);
+   _system_stat_path    = path_to(_procfs_path, "stat");
+   _system_meminfo_path = path_to(_procfs_path, "meminfo");
+   _process_stat_path   = path_to(_procfs_path, _pid, "stat");
+   _process_status_path = path_to(_procfs_path, _pid, "status");
+   _process_task_path   = path_to(_procfs_path, _pid, "task");
 
    initialize_system_data(&_last_system_data);
    initialize_system_data(&_system_data);
@@ -175,7 +175,7 @@ void ProcessMonitor::parse_process_threads(int pid, thread_data_t** thread_data,
 
    for (int i = 0; i < *thread_count; ++i)
    {
-      parse_thread(pid, tids[i], *thread_data + i);   /* pointer wulst ^^ */
+      parse_thread(pid, tids[i], &(*thread_data)[i]);
    }
 
    free(tids);
@@ -196,11 +196,10 @@ void ProcessMonitor::parse_process_stat_file(int pid, process_data_t* stat)
 
 void ProcessMonitor::parse_thread_stat_file(int pid, int tid, thread_data_t* stat)
 {
-   char* filename;
-
-   get_path(_procfs_path, pid, tid, "stat", &filename);
+   char* filename = path_to(_procfs_path, pid, tid, "stat");
 
    FILE* file = fopen(filename, "r");
+
    parse_process_stat_stream(file, stat);
    fclose(file);
 
@@ -270,7 +269,6 @@ int ProcessMonitor::parse_system_stat_stream_for_cpu_count(FILE* stream)
    {
       sscanf(line, "cpu%d", &i);
    }
-   ;
 
    return i + 1;
 }
@@ -301,7 +299,6 @@ void ProcessMonitor::parse_system_stat_stream(FILE* stream, system_data_t* stat_
       else
          break;
    }
-   ;
 }
 
 void ProcessMonitor::parse_system_meminfo_file(meminfo_t* data)
@@ -321,7 +318,6 @@ void ProcessMonitor::parse_meminfo_stream(FILE* stream, meminfo_t* data)
       sscanf(line, "MemTotal: %lu kB\n", &data->total);
       sscanf(line, "MemFree: %lu kB\n", &data->free);
    }
-   ;
 
    data->used = data->total - data->free;
 }
@@ -378,28 +374,37 @@ void ProcessMonitor::copy_process_data(process_data_t* dest_data, process_data_t
    }
 }
 
-void ProcessMonitor::get_path(const char* procfs_path, const char* name, char** path)
+char* ProcessMonitor::path_to(const char* procfs_path, const char* name)
 {
    int length = strlen(procfs_path) + 1 + strlen(name) + 1;  // todo
 
-   *path = (char*)malloc(length);
-   snprintf(*path, length, "%s/%s", procfs_path, name);
+   char* path = (char*)malloc(length);
+
+   snprintf(path, length, "%s/%s", procfs_path, name);
+
+   return path;
 }
 
-void ProcessMonitor::get_path(const char* procfs_path, int pid, const char* name, char** path)
+char* ProcessMonitor::path_to(const char* procfs_path, int pid, const char* name)
 {
    int length = strlen(procfs_path) + 1 + 5 + 1 + strlen(name) + 1;  // todo
 
-   *path = (char*)malloc(length);
-   snprintf(*path, length, "%s/%d/%s", procfs_path, pid, name);
+   char* path = (char*)malloc(length);
+
+   snprintf(path, length, "%s/%d/%s", procfs_path, pid, name);
+
+   return path;
 }
 
-void ProcessMonitor::get_path(const char* procfs_path, int pid, int tid, const char* name, char** path)
+char* ProcessMonitor::path_to(const char* procfs_path, int pid, int tid, const char* name)
 {
    int length = strlen(procfs_path) + 1 + 5 + 1 + 4 + 1 + 5 + 1 + strlen(name) + 1;  // todo
 
-   *path = (char*)malloc(length);
-   snprintf(*path, length, "%s/%d/task/%d/%s", procfs_path, pid, tid, name);
+   char* path = (char*)malloc(length);
+
+   snprintf(path, length, "%s/%d/task/%d/%s", procfs_path, pid, tid, name);
+
+   return path;
 }
 
 void ProcessMonitor::initialize_system_data(system_data_t* system_data)
@@ -558,7 +563,7 @@ double ProcessMonitor::process_mem_usage()
    return (double)(10000 * _process_data._memory_data.rss / _system_data._memory_data.total) / 100;
 }
 
-// todo, need correct formula here. check with top
+// todo, need correct formula here
 double ProcessMonitor::process_cpus_usage()
 {
    if (_last_system_data._cpus_data.total == _system_data._cpus_data.total)

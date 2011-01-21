@@ -392,17 +392,11 @@ TEST(ProcessMonitor, ComputeCorrectProcfsPaths)
 {
    ProcessMonitor pm(42, "/proc");
 
-   char           * system_stat_path;
-   char           * process_stat_path;
-   char           * other_process_stat_path;
-   char           * process_status_path;
-   char           * thread_stat_path;
-
-   ProcessMonitor::get_path("/proc", "stat", &system_stat_path);
-   ProcessMonitor::get_path("/proc", 42, "stat", &process_stat_path);
-   ProcessMonitor::get_path("other/proc", 42, "stat", &other_process_stat_path);
-   ProcessMonitor::get_path("/proc", 42, "status", &process_status_path);
-   ProcessMonitor::get_path("/proc", 42, 1732, "stat", &thread_stat_path);
+   char* system_stat_path        = ProcessMonitor::path_to("/proc", "stat");
+   char* process_stat_path       = ProcessMonitor::path_to("/proc", 42, "stat");
+   char* other_process_stat_path = ProcessMonitor::path_to("other/proc", 42, "stat");
+   char* process_status_path     = ProcessMonitor::path_to("/proc", 42, "status");
+   char* thread_stat_path        = ProcessMonitor::path_to("/proc", 42, 1732, "stat");
 
    EXPECT_STREQ("/proc/stat", system_stat_path);
    EXPECT_STREQ("/proc/42/stat", process_stat_path);
