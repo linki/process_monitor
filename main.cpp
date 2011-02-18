@@ -17,7 +17,7 @@ int main(int argc, const char* argv[])
       fprintf(stderr, "USAGE: %s PID\n", argv[0]);
       exit(EXIT_FAILURE);
    }
-
+   
    ProcessMonitor pm(pid);
 
    if (!pm.has_valid_procfs_path())

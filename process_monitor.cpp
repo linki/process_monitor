@@ -238,7 +238,6 @@ void ProcessMonitor::parse_process_status_stream(FILE* stream, memory_data_t* da
       sscanf(line, "VmSize: %lu kB\n", &data->total);
       sscanf(line, "VmRSS: %lu kB\n", &data->rss);
    }
-   ;
 }
 
 void ProcessMonitor::parse_system_stat_file(system_data_t* stat)
