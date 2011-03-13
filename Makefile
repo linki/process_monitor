@@ -1,9 +1,11 @@
 main: main.cpp libpm.so
 	g++ -o main main.cpp -Iinclude -L. -lpm -lpthread -Wall
 
-test: test/process_monitor_test.cpp libpm.so
-	g++ -o process_monitor_test test/process_monitor_test.cpp -Iinclude -L. -lpm -lpthread -lgtest -lgtest_main -Wall
+test: process_monitor_test
 	./process_monitor_test
+
+process_monitor_test: test/process_monitor_test.cpp libpm.so
+	g++ -o process_monitor_test test/process_monitor_test.cpp -Iinclude -L. -lpm -lpthread -lgtest -lgtest_main -Wall
 
 libpm.so: src/process_monitor.o
 	g++ -o libpm.so -shared src/process_monitor.o
