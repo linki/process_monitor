@@ -1,23 +1,4 @@
-# xcode noise
-*.mode1v3
-*.pbxuser
-*.perspective 
-*.perspectivev3
-*.pyc 
-*~.nib/
-build/*
-
-# Textmate - if you build your xcode projects with it
-*.tm_build_errors
-
-# old skool
-.svn
-
-# osx noise
-.DS_Store
-profile
-
-# custom
 main
-process_monitor
 process_monitor_test
+libpm.so
+src/process_monitor.o

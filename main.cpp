@@ -4,7 +4,7 @@
 
 #include "process_monitor.h"
 
-int main(int argc, const char* argv[])
+int main(int argc, const char **argv)
 {
    int pid;
 
@@ -15,7 +15,7 @@ int main(int argc, const char* argv[])
    else
    {
       fprintf(stderr, "USAGE: %s PID\n", argv[0]);
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
    }
    
    ProcessMonitor pm(pid);
@@ -23,7 +23,7 @@ int main(int argc, const char* argv[])
    if (!pm.has_valid_procfs_path())
    {
       fprintf(stderr, "ERROR: invalid procfs path or process id\n");
-      exit(EXIT_FAILURE);
+      return EXIT_FAILURE;
    }
 
    pm.start();

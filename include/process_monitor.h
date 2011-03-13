@@ -1,4 +1,3 @@
-#include <stdio.h>
 #include <pthread.h>
 
 #define PM_DEFAULT_PROCFS_PATH    "/proc"
@@ -120,115 +119,115 @@ class ProcessMonitor
 {
 public:
 
-int       _pid;
-int       _interval;
-char      * _procfs_path;
+   int       _pid;
+   int       _interval;
+   char      * _procfs_path;
 
-pthread_t _runner;
-int       _running;
+   pthread_t _runner;
+   int       _running;
 
-void initialize(int pid, int interval, const char* procfs_path);
+   void initialize(int pid, int interval, const char* procfs_path);
 
-system_data_t  _system_data;
-system_data_t  _last_system_data;
+   system_data_t  _system_data;
+   system_data_t  _last_system_data;
 
-process_data_t _process_data;
-process_data_t _last_process_data;
+   process_data_t _process_data;
+   process_data_t _last_process_data;
 
-char           * _system_stat_path;
-char           * _system_meminfo_path;
-char           * _process_stat_path;
-char           * _process_status_path;
-char           * _process_task_path;
+   char           * _system_stat_path;
+   char           * _system_meminfo_path;
+   char           * _process_stat_path;
+   char           * _process_status_path;
+   char           * _process_task_path;
 
-// constructors take pid, interval and path to procfs
-explicit ProcessMonitor(int pid);
-explicit ProcessMonitor(int pid, int interval);
-explicit ProcessMonitor(int pid, const char* procfs_path);
-explicit ProcessMonitor(int pid, int interval, const char* procfs_path);
+   // constructors take pid, interval and path to procfs
+   explicit ProcessMonitor(int pid);
+   explicit ProcessMonitor(int pid, int interval);
+   explicit ProcessMonitor(int pid, const char* procfs_path);
+   explicit ProcessMonitor(int pid, int interval, const char* procfs_path);
 
-// destructor
-~ProcessMonitor();
+   // destructor
+   ~ProcessMonitor();
 
-// control
-int fetch();
-void start();
-void stop();
+   // control
+   int fetch();
+   void start();
+   void stop();
 
-// accessors
-int pid();
-int interval();
-char* procfs_path();
-int has_valid_procfs_path();
-int is_running();
-int num_cpus();
-int num_threads();
+   // accessors
+   int pid();
+   int interval();
+   char* procfs_path();
+   int has_valid_procfs_path();
+   int is_running();
+   int num_cpus();
+   int num_threads();
 
-// remember start time of processmonitor and scope these values in that timeframe
-// instead of the system start
-unsigned long cpus_clock_ticks_total();
-unsigned long cpu_clock_ticks_total(int cid);
-unsigned long cpus_clock_ticks_used();
-unsigned long cpu_clock_ticks_used(int cid);
+   // remember start time of processmonitor and scope these values in that timeframe
+   // instead of the system start
+   unsigned long cpus_clock_ticks_total();
+   unsigned long cpu_clock_ticks_total(int cid);
+   unsigned long cpus_clock_ticks_used();
+   unsigned long cpu_clock_ticks_used(int cid);
 
-unsigned long system_mem_total();
-unsigned long system_mem_free();
-unsigned long system_mem_used();
+   unsigned long system_mem_total();
+   unsigned long system_mem_free();
+   unsigned long system_mem_used();
 
-char state();
-char* executable_name();
+   char state();
+   char* executable_name();
 
-unsigned long process_mem_total();
-unsigned long process_mem_used();
-unsigned long process_mem_peak();
+   unsigned long process_mem_total();
+   unsigned long process_mem_used();
+   unsigned long process_mem_peak();
 
-double cpus_usage();
-double cpu_usage(int cid);
+   double cpus_usage();
+   double cpu_usage(int cid);
 
-double system_mem_usage();
-double process_mem_usage();
+   double system_mem_usage();
+   double process_mem_usage();
 
-double process_cpus_usage();
+   double process_cpus_usage();
 
-double thread_cpus_usage(int tid);
-double process_thread_cpus_usage(int tid);
+   double thread_cpus_usage(int tid);
+   double process_thread_cpus_usage(int tid);
 
-// thread loop
-static void* run(void* data);
+   // thread loop
+   static void* run(void* data);
 
-// parsing
-void parse_system_data(system_data_t* system_data);
-void parse_process_data(int pid, process_data_t* process_data);
-void parse_process_threads(int pid, thread_data_t** thread_data, int* thread_count);
-void parse_thread(int pid, int tid, thread_data_t* thread_data);
+   // parsing
+   void parse_system_data(system_data_t* system_data);
+   void parse_process_data(int pid, process_data_t* process_data);
+   void parse_process_threads(int pid, thread_data_t** thread_data, int* thread_count);
+   void parse_thread(int pid, int tid, thread_data_t* thread_data);
 
-void parse_process_stat_file(int pid, process_data_t* stat);
-void parse_thread_stat_file(int pid, int tid, thread_data_t* stat);
-void parse_system_stat_file(system_data_t* system_data);
+   void parse_process_stat_file(int pid, process_data_t* stat);
+   void parse_thread_stat_file(int pid, int tid, thread_data_t* stat);
+   void parse_system_stat_file(system_data_t* system_data);
 
-void parse_process_status_file(int pid, memory_data_t* data);
-void parse_system_meminfo_file(meminfo_t* data);
+   void parse_process_status_file(int pid, memory_data_t* data);
+   void parse_system_meminfo_file(meminfo_t* data);
 
-void parse_process_stat_stream(FILE* stream, process_data_t* stat);
-void parse_process_status_stream(FILE* stream, memory_data_t* data);
-void parse_system_stat_stream(FILE* stream, system_data_t* stat_data);
-void parse_meminfo_stream(FILE* stream, meminfo_t* data);
+   void parse_process_stat_stream(FILE* stream, process_data_t* stat);
+   void parse_process_status_stream(FILE* stream, memory_data_t* data);
+   void parse_system_stat_stream(FILE* stream, system_data_t* stat_data);
+   void parse_meminfo_stream(FILE* stream, meminfo_t* data);
 
-int parse_system_stat_stream_for_cpu_count(FILE* stream);
+   int parse_system_stat_stream_for_cpu_count(FILE* stream);
 
-int parse_process_thread_ids(int pid, int** ptids);
+   int parse_process_thread_ids(int pid, int** ptids);
 
-// copy helpers
-static void copy_system_data(system_data_t* dest_data, system_data_t* src_data);
-static void copy_process_data(process_data_t* dest_data, process_data_t* src_data);
+   // copy helpers
+   static void copy_system_data(system_data_t* dest_data, system_data_t* src_data);
+   static void copy_process_data(process_data_t* dest_data, process_data_t* src_data);
 
-// path helpers
-static char* path_to(const char* procfs_path, const char* name);
-static char* path_to(const char* procfs_path, int pid, const char* name);
-static char* path_to(const char* procfs_path, int pid, int tid, const char* name);
+   // path helpers
+   static char* path_to(const char* procfs_path, const char* name);
+   static char* path_to(const char* procfs_path, int pid, const char* name);
+   static char* path_to(const char* procfs_path, int pid, int tid, const char* name);
 
-// initializers
-static void initialize_system_data(system_data_t* system_data);
-static void initialize_process_data(process_data_t* process_data);
-static void initialize_thread_data(thread_data_t** thread_data, int* thread_count);
+   // initializers
+   static void initialize_system_data(system_data_t* system_data);
+   static void initialize_process_data(process_data_t* process_data);
+   static void initialize_thread_data(thread_data_t** thread_data, int* thread_count);
 };

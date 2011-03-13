@@ -1,13 +1,18 @@
-app: main.cpp process_monitor.h process_monitor.cpp
-	g++ -o main main.cpp process_monitor.cpp -lpthread -O3 -pipe -Wall
+main: main.cpp libpm.so
+	g++ -o main main.cpp -Iinclude -L. -lpm -lpthread -Wall
 
-test: process_monitor_test.cpp process_monitor.h process_monitor.cpp
-	g++ -o process_monitor_test process_monitor_test.cpp process_monitor.h process_monitor.cpp -lpthread -lgtest -lgtest_main -pipe -Wall
+test: test/process_monitor_test.cpp libpm.so
+	g++ -o process_monitor_test test/process_monitor_test.cpp -Iinclude -L. -lpm -lpthread -lgtest -lgtest_main -Wall
 	./process_monitor_test
 
-uncrustify: process_monitor_test.cpp process_monitor.h process_monitor.cpp main.cpp
-	uncrustify -c ../../.uncrustify process_monitor_test.cpp process_monitor.h process_monitor.cpp main.cpp
+libpm.so: src/process_monitor.o
+	g++ -o libpm.so -shared src/process_monitor.o
+
+src/process_monitor.o: include/process_monitor.h src/process_monitor.cpp
+	g++ -fPIC -Iinclude -c -o src/process_monitor.o src/process_monitor.cpp
 
 clean:
-	rm -f main process_monitor process_monitor_test
-	rm -f *.uncrustify
+	$(RM) src/*.o
+	$(RM) main
+	$(RM) process_monitor_test
+	$(RM) libpm.so
