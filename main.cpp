@@ -4,6 +4,25 @@
 
 #include "process_monitor.h"
 
+/* Sample Output:
+ *
+ * Process: (channels)
+ *
+ * Overall CPU Usage: 33.26%
+ *   2 Cores: 36.50% 30.19% 
+ * 
+ * Overall CPU Usage by Process 2814: 41.50%
+ *   5 Threads: 0.00% 26.90% 22.80% 26.90% 23.97% 
+ * 
+ * Total Memory: 1538980 kB
+ * Free  Memory: 593572 kB
+ * Overall Memory Usage: 61.44%
+ * 
+ * Total Memory of Process 2814: 47180 kB
+ * Memory Used by Process 2814: 8524 kB
+ * Process Memory Usage: 0.55%
+ *
+ */
 int main(int argc, const char **argv)
 {
    if (argc != 2)
