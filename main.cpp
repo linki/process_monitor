@@ -6,18 +6,14 @@
 
 int main(int argc, const char **argv)
 {
-   int pid;
-
-   if (argc == 2)
-   {
-      pid = atoi(argv[1]);
-   }
-   else
+   if (argc != 2)
    {
       fprintf(stderr, "USAGE: %s PID\n", argv[0]);
       return EXIT_FAILURE;
    }
-   
+
+   int pid = atoi(argv[1]);   
+
    ProcessMonitor pm(pid);
 
    if (!pm.has_valid_procfs_path())
