@@ -1,4 +1,3 @@
-main
-process_monitor_test
-libpm.so
-src/process_monitor.o
+src/*.o
+lib/libpm.so
+bin/*
